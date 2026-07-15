@@ -1,0 +1,6 @@
+# Ignore everything in the root that isn't explicitly tracked, 
+# or just ignore standard things if we make it a git repo.
+node_modules/
+.env
+.env.*
+!.env.example
