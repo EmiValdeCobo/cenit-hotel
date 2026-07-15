@@ -1,4 +1,4 @@
-�"use client";
+"use client";
 
 import { useState } from 'react';
 import { AumentoCosto, Descuento } from '@/lib/schemas';
@@ -42,9 +42,8 @@ export default function SettingsClient({ seasonalCosts, discounts }: Props) {
                 <span className="font-bold text-error text-sm">+{Number(c.porcentaje_aumento).toFixed(2)}%</span>
                 <button
                   onClick={() => handleToggle(c.id_aumento_costo)}
-                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none flex ${
-                    c.activado ? 'bg-secondary justify-end' : 'bg-surface-variant/60 justify-start'
-                  }`}
+                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none flex ${c.activado ? 'bg-secondary justify-end' : 'bg-surface-variant/60 justify-start'
+                    }`}
                 >
                   <span className="w-5 h-5 rounded-full bg-white shadow-md transform"></span>
                 </button>
