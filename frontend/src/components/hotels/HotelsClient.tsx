@@ -1,4 +1,4 @@
-�"use client";
+"use client";
 import { useState, useEffect } from 'react';
 
 export default function HotelsClient() {
@@ -53,19 +53,19 @@ export default function HotelsClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Note: This relies on the backend POST/PUT implementation
-    const url = editingId 
-      ? `http://localhost:8000/api/hoteles/${editingId}` 
+    const url = editingId
+      ? `http://localhost:8000/api/hoteles/${editingId}`
       : 'http://localhost:8000/api/hoteles';
-      
+
     try {
       const res = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      
+
       if (res.ok) {
         setIsOpen(false);
         fetchHotels();
@@ -143,15 +143,15 @@ export default function HotelsClient() {
                 </div>
               </div>
               <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-surface-variant">
-                <button 
-                  onClick={() => openModal(h)} 
+                <button
+                  onClick={() => openModal(h)}
                   className="p-2 bg-surface-variant rounded-lg hover:bg-surface-variant/80 transition-colors"
                   title="Editar"
                 >
                   <span className="material-symbols-outlined text-sm text-primary">edit</span>
                 </button>
-                <button 
-                  onClick={() => handleDelete(h.id_hotel)} 
+                <button
+                  onClick={() => handleDelete(h.id_hotel)}
                   className="p-2 bg-error-container text-on-error-container rounded-lg hover:bg-error-container/80 transition-colors"
                   title="Eliminar"
                 >
