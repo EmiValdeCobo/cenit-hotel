@@ -1,4 +1,4 @@
-�"use client";
+"use client";
 
 import { useState } from 'react';
 import { FacturaSimplificada, FacturaCompleta } from '@/lib/schemas';
@@ -13,8 +13,8 @@ export default function BillingClient({ initialBills }: Props) {
   const [selectedBill, setSelectedBill] = useState<FacturaCompleta | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const filteredBills = bills.filter(b => 
-    b.nombre_huesped.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredBills = bills.filter(b =>
+    b.nombre_huesped.toLowerCase().includes(search.toLowerCase()) ||
     b.id_factura.toString().includes(search)
   );
 
