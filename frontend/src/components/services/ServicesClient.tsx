@@ -1,4 +1,4 @@
-�"use client";
+"use client";
 
 import { useState } from 'react';
 import { Servicio, ServiciosMasConsumidos, EstadiaActiva } from '@/lib/schemas';
@@ -102,7 +102,7 @@ export default function ServicesClient({ services, popular, activeStays }: Props
           <div className="max-h-[90vh] overflow-y-auto w-full max-w-md bg-surface rounded-3xl p-6 shadow-2xl relative animate-fade-in border border-surface-variant">
             <h3 className="text-xl font-bold text-on-background mb-4">Registrar Consumo</h3>
             {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-xl text-sm">{error}</div>}
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-outline uppercase tracking-wider mb-1">Huésped Hospedado</label>
