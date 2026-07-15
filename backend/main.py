@@ -1,10 +1,18 @@
 # backend/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from errors.exceptions import register_exception_handlers
 from routers import hoteles, habitaciones, huespedes, reservaciones, estadias, servicios, empleados, reportes, configuraciones
 
 app = FastAPI(title="Cenit API - Sistema de Gestión Hotelera")
+
+@app.middleware("http")
+async def ensure_utf8_response(request: Request, call_next):
+    response = await call_next(request)
+    content_type = response.headers.get("content-type", "")
+    if content_type.startswith("application/json") and "charset" not in content_type:
+        response.headers["content-type"] = f"{content_type}; charset=utf-8"
+    return response
 
 app.add_middleware(
     CORSMiddleware,

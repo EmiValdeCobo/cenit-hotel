@@ -150,8 +150,8 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
       </div>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface-bright border border-surface-variant w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
+          <div className="bg-surface-bright border border-surface-variant w-full max-w-[92vw] sm:max-w-lg max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative animate-fade-in">
             <h3 className="text-xl font-bold text-on-background mb-4">Nueva Reservación</h3>
             {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-xl text-sm">{error}</div>}
 

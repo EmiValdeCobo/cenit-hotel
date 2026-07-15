@@ -89,10 +89,10 @@ export default function BillingClient({ initialBills }: Props) {
       </div>
 
       {selectedBill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface-bright border border-surface-variant w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
+          <div className="bg-surface-bright border border-surface-variant w-full max-w-[92vw] sm:max-w-lg max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative animate-fade-in">
             <div className="text-center border-b border-dashed border-surface-variant pb-4 mb-4">
-              <h3 className="text-2xl font-bold text-primary">C�0NIT BOUTIQUE HOTEL</h3>
+              <h3 className="text-2xl font-bold text-primary">CÉNIT BOUTIQUE HOTEL</h3>
               <p className="text-xs text-outline">Factura Electrónica</p>
               <p className="text-xs text-outline">N° Factura: #FC-{selectedBill.id_factura}</p>
               <p className="text-xs text-outline">Fecha: {new Date(selectedBill.fecha).toLocaleString()}</p>

@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "C�nit - Dashboard",
-  description: "Hotel Management System",
+  title: "Cénit - Dashboard",
+  description: "Sistema de gestión hotelera",
 };
 
 export default function RootLayout({
@@ -22,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable}`}>
       <head>
+        <meta charSet="utf-8" />
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block"
           rel="stylesheet"
