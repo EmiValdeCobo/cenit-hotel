@@ -1,4 +1,4 @@
-�import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function SideNavBar() {
@@ -80,7 +80,7 @@ export default function SideNavBar() {
           </Link>
         </li>
       </ul>
-      
+
       <div className="mt-auto px-6 flex items-center gap-3 opacity-70">
         <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center overflow-hidden">
           <span className="material-symbols-outlined text-on-surface-variant text-sm">person</span>
