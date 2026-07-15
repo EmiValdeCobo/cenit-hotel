@@ -1,4 +1,4 @@
-�"use client";
+"use client";
 
 import { useState } from 'react';
 import { DiasRestantesReservacion, Habitacion, Huesped } from '@/lib/schemas';
@@ -24,8 +24,8 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
   const [cantHuespedes, setCantHuespedes] = useState(1);
 
   const filteredReservations = reservations.filter(r => {
-    const matchesSearch = r.nombre_huesped?.toLowerCase().includes(search.toLowerCase()) || 
-                          r.documento_huesped.includes(search);
+    const matchesSearch = r.nombre_huesped?.toLowerCase().includes(search.toLowerCase()) ||
+      r.documento_huesped.includes(search);
     const matchesStatus = statusFilter === 'TODAS' || r.estado_reservacion === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -134,11 +134,10 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
                     </td>
                     <td className="p-4 text-sm text-on-surface-variant">{r.nombre_empleado}</td>
                     <td className="p-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        r.estado_reservacion === 'CONFIRMADA' ? 'bg-secondary-container text-on-secondary-container' :
-                        r.estado_reservacion === 'PENDIENTE' ? 'bg-tertiary-fixed text-on-tertiary-fixed' :
-                        'bg-surface-variant text-outline'
-                      }`}>
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${r.estado_reservacion === 'CONFIRMADA' ? 'bg-secondary-container text-on-secondary-container' :
+                          r.estado_reservacion === 'PENDIENTE' ? 'bg-tertiary-fixed text-on-tertiary-fixed' :
+                            'bg-surface-variant text-outline'
+                        }`}>
                         {r.estado_reservacion}
                       </span>
                     </td>
@@ -155,7 +154,7 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
           <div className="bg-surface-bright border border-surface-variant w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-fade-in">
             <h3 className="text-xl font-bold text-on-background mb-4">Nueva Reservación</h3>
             {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-xl text-sm">{error}</div>}
-            
+
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-outline uppercase tracking-wider mb-1">Huésped</label>
