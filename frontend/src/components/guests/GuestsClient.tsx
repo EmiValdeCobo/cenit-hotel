@@ -1,4 +1,4 @@
-�"use client";
+"use client";
 
 import { useState } from 'react';
 import { Huesped, DiasRestantesReservacion, EstadiaActiva } from '@/lib/schemas';
@@ -29,8 +29,8 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
   const [metodoPago, setMetodoPago] = useState('EFECTIVO');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
-  const filteredGuests = guests.filter(g => 
-    g.nombre.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredGuests = guests.filter(g =>
+    g.nombre.toLowerCase().includes(search.toLowerCase()) ||
     g.documento.includes(search)
   );
 
@@ -172,7 +172,7 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
                         <div className="text-xs text-outline">{g.telefono}</div>
                       </td>
                       <td className="p-4 flex gap-2 justify-end">
-                        <button 
+                        <button
                           onClick={() => {
                             setNombre(g.nombre);
                             setCorreo(g.correo);
@@ -180,12 +180,12 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
                             setDocumento(g.documento);
                             setTipoDocumento(g.tipo_documento);
                             setIsOpen(true);
-                          }} 
+                          }}
                           className="p-2 bg-surface-variant rounded-lg hover:bg-surface-variant/80 transition-colors"
                         >
                           <span className="material-symbols-outlined text-sm text-primary">edit</span>
                         </button>
-                        <button 
+                        <button
                           onClick={async () => {
                             if (confirm('¿Eliminar huésped?')) {
                               try {
@@ -196,7 +196,7 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
                                 console.error(e);
                               }
                             }
-                          }} 
+                          }}
                           className="p-2 bg-error-container text-on-error-container rounded-lg hover:bg-error-container/80 transition-colors"
                         >
                           <span className="material-symbols-outlined text-sm">delete</span>
@@ -267,7 +267,7 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
           <div className="max-h-[90vh] overflow-y-auto w-full max-w-md bg-surface rounded-3xl p-6 shadow-2xl relative animate-fade-in border border-surface-variant">
             <h3 className="text-xl font-bold text-on-background mb-4">Registrar Nuevo Huésped</h3>
             {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-xl text-sm">{error}</div>}
-            
+
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-outline uppercase tracking-wider mb-1">Nombre Completo</label>
