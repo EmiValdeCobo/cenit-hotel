@@ -1,4 +1,4 @@
-�import Link from "next/link";
+import Link from "next/link";
 
 export default function TopAppBar() {
   return (
@@ -26,7 +26,7 @@ export default function TopAppBar() {
           </button>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4 text-primary dark:text-primary-fixed">
         <button className="p-2 rounded-full hover:bg-surface-container-low transition-colors cursor-pointer active:opacity-80 relative">
           <span className="material-symbols-outlined">notifications</span>
