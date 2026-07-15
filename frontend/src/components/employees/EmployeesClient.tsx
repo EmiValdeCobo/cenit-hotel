@@ -1,4 +1,4 @@
-�"use client";
+"use client";
 
 import { useState } from 'react';
 import { Empleado } from '@/lib/schemas';
@@ -21,8 +21,8 @@ export default function EmployeesClient({ initialEmployees }: Props) {
   const [salario, setSalario] = useState(0);
   const [idTipoEmpleado, setIdTipoEmpleado] = useState('2'); // 2 = Recepcionista
 
-  const filteredEmployees = employees.filter(e => 
-    e.empleado.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredEmployees = employees.filter(e =>
+    e.empleado.toLowerCase().includes(search.toLowerCase()) ||
     e.rol_de_trabajo.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -96,7 +96,7 @@ export default function EmployeesClient({ initialEmployees }: Props) {
                 {e.empleado.slice(0, 2).toUpperCase()}
               </div>
             </div>
-            
+
             <div className="border-t border-surface-variant/30 pt-3 space-y-1.5 text-sm text-on-surface-variant">
               <p className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">mail</span> {e.email}
@@ -124,7 +124,7 @@ export default function EmployeesClient({ initialEmployees }: Props) {
           <div className="max-h-[90vh] overflow-y-auto w-full max-w-md bg-surface rounded-3xl p-6 shadow-2xl relative animate-fade-in border border-surface-variant">
             <h3 className="text-xl font-bold text-on-background mb-4">Registrar Nuevo Empleado</h3>
             {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-xl text-sm">{error}</div>}
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-outline uppercase tracking-wider mb-1">Nombre Completo</label>
