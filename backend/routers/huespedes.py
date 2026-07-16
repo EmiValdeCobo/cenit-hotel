@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from db.database import get_db
 from services.huesped_service import HuespedService
-from schemas.schemas import HuespedCreate, HuespedResponse, HuespedesPorHotelResponse, GastoHistoricoHuespedResponse
+from schemas.schemas import HuespedCreate, HuespedResponse, HuespedesPorHotelResponse, GastoHistoricoHuespedResponse, HuespedUpdate
 from typing import List
 
 router = APIRouter(prefix="/huespedes", tags=["Huéspedes"])
@@ -27,3 +27,11 @@ def huespedes_por_hotel(db: Session = Depends(get_db)):
 def gasto_historico(db: Session = Depends(get_db)):
     service = HuespedService(db)
     return service.gasto_historico()
+
+@router.put("/{id_huesped}", response_model=HuespedResponse)
+def actualizar_huesped(id_huesped: int, huesped: HuespedUpdate, db: Session = Depends(get_db)):
+    return HuespedService(db).actualizar_huesped(id_huesped, huesped)
+
+@router.delete("/{id_huesped}")
+def eliminar_huesped(id_huesped: int, db: Session = Depends(get_db)):
+    return HuespedService(db).eliminar_huesped(id_huesped)

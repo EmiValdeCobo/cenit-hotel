@@ -140,6 +140,7 @@ class Descuento(Base):
     id_descuento = Column(Integer, primary_key=True, index=True)
     porcentaje_descuento = Column(Numeric(5, 2), nullable=False)
     cant_dia_hospedado = Column(Integer)
+    activado = Column(Boolean, default=True, nullable=False, server_default="true")
 
 class DetalleFactura(Base):
     __tablename__ = 'detalle_factura'

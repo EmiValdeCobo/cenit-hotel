@@ -35,4 +35,3 @@ class EstadiaRepository(BaseRepository[Estadia]):
                 "metodo_pago": metodo_pago
             })
             self.db.commit()
-v = 1 # version variable

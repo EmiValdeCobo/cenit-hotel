@@ -285,18 +285,43 @@ class AumentoCostoResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class AumentoCostoCreate(BaseModel):
+    porcentaje_aumento: Decimal = Field(..., gt=0, le=100)
+    fecha_inicio: date
+    fecha_fin: date
+    nombre_temporada: Optional[str] = Field(None, max_length=100)
+    activado: bool = True
+
+class AumentoCostoUpdate(BaseModel):
+    porcentaje_aumento: Optional[Decimal] = Field(None, gt=0, le=100)
+    fecha_inicio: Optional[date] = None
+    fecha_fin: Optional[date] = None
+    nombre_temporada: Optional[str] = Field(None, max_length=100)
+    activado: Optional[bool] = None
+
 class DescuentoResponse(BaseModel):
     id_descuento: int
     porcentaje_descuento: Decimal
     cant_dia_hospedado: Optional[int] = None
+    activado: bool
 
     class Config:
         from_attributes = True
+
+class DescuentoCreate(BaseModel):
+    porcentaje_descuento: Decimal = Field(..., gt=0, le=100)
+    cant_dia_hospedado: Optional[int] = Field(None, ge=1)
+    activado: bool = True
+
+class DescuentoUpdate(BaseModel):
+    porcentaje_descuento: Optional[Decimal] = Field(None, gt=0, le=100)
+    cant_dia_hospedado: Optional[int] = Field(None, ge=1)
+    activado: Optional[bool] = None
 # --- CRUD de Hoteles ---
 class HotelBase(BaseModel):
     nombre: str = Field(..., max_length=255)
     direccion: Optional[str] = None
-    niveles_edificios: int
+    niveles_edificios: int = 1
     calificacion: Optional[Decimal] = None
     descripcion: Optional[str] = None
 
@@ -354,5 +379,5 @@ class ServicioUpdate(BaseModel):
 
 # --- CRUD de Reservaciones ---
 class ReservacionUpdate(BaseModel):
-    estado: str = Field(..., pattern="^(PENDIENTE|CONFIRMADA|CANCELADA|FINALIZADA)$")
+    estado: str = Field(..., pattern="^(PENDIENTE|CONFIRMADA|CANCELADA|RECHAZADA|COMPLETADA)$")
 

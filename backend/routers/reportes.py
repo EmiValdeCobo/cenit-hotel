@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from db.database import get_db
 from services.factura_service import FacturaService
-from schemas.schemas import FacturaCompletaResponse, IngresosMesResponse, TasaOcupacionResponse
+from schemas.schemas import FacturaCompletaResponse, IngresosMesResponse, TasaOcupacionResponse, FacturaSimplificadaResponse
 from typing import List
+from sqlalchemy import text
 
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
 
@@ -23,11 +24,8 @@ def get_factura_completa(id_factura: int, db: Session = Depends(get_db)):
     service = FacturaService(db)
     return service.obtener_factura_completa(id_factura)
 
-from schemas.schemas import FacturaSimplificadaResponse
-
 @router.get("/facturas", response_model=List[FacturaSimplificadaResponse])
 def listar_facturas(db: Session = Depends(get_db)):
-    from sqlalchemy import text
     query = text("""
         SELECT f.id_factura, h.nombre as nombre_huesped, e.nombre as nombre_empleado, f.fecha, f.metodo_pago, f.total_a_pagar
         FROM factura f

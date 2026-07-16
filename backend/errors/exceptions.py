@@ -29,7 +29,7 @@ def register_exception_handlers(app: FastAPI):
         logger.error(f"AppException: {exc.message} (Status: {exc.status_code})")
         return JSONResponse(
             status_code=exc.status_code,
-            content={"success": False, "error": exc.message}
+            content={"success": False, "detail": exc.message}
         )
 
     @app.exception_handler(Exception)
@@ -37,5 +37,5 @@ def register_exception_handlers(app: FastAPI):
         logger.error(f"Unhandled Exception: {str(exc)}", exc_info=True)
         return JSONResponse(
             status_code=500,
-            content={"success": False, "error": "Error interno del servidor."}
+            content={"success": False, "detail": "Error interno del servidor."}
         )

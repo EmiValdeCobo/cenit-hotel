@@ -1,9 +1,11 @@
 # backend/routers/empleados.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from db.database import get_db
+from db.models import Empleado
 from services.empleado_service import EmpleadoService
-from schemas.schemas import EmpleadoResponse
+from schemas.schemas import EmpleadoResponse, EmpleadoCreate
 from typing import List
 
 router = APIRouter(prefix="/empleados", tags=["Empleados"])
@@ -13,11 +15,8 @@ def listar_empleados(db: Session = Depends(get_db)):
     service = EmpleadoService(db)
     return service.listar_empleados()
 
-from schemas.schemas import EmpleadoCreate
-
 @router.post("", response_model=EmpleadoResponse)
 def crear_empleado(empleado: EmpleadoCreate, db: Session = Depends(get_db)):
-    from db.models import Empleado
     db_empleado = Empleado(
         id_tipo_empleado=empleado.id_tipo_empleado,
         nombre=empleado.nombre,
@@ -30,7 +29,6 @@ def crear_empleado(empleado: EmpleadoCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_empleado)
     
-    from sqlalchemy import text
     query = text("""
         SELECT e.nombre as empleado, e.dui as documento_de_identidad, e.telefono, e.correo as email, te.tipo_empleado as rol_de_trabajo, e.salario
         FROM empleado e
