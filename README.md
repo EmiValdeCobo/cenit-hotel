@@ -28,22 +28,34 @@ El proyecto incluye scripts en el archivo `package.json` de la raíz para facili
    ```
    Esto instalará las dependencias de Node en el frontend e instalará las dependencias de Python en un entorno virtual (`venv`) dentro de la carpeta `backend`.
 
-## Ejecución en Desarrollo
+## Ejecución en Desarrollo (Recomendado para evitar problemas de memoria)
 
-Puedes levantar ambos servicios (frontend y backend) simultáneamente usando el script integrado:
+Dado que ejecutar ambos servicios en paralelo o mediante contenedores puede consumir demasiada RAM (especialmente el nuevo compilador de Next.js), se recomienda **ejecutar los servicios por separado y sin Docker**.
+
+### 1. Levantar el Backend (API FastAPI localmente)
+En una terminal nueva, ejecuta el backend directamente usando el entorno virtual de Python:
 
 ```bash
-npm run dev
+cd backend
+# Activar entorno virtual (Windows)
+.\venv\Scripts\activate
+# O en Mac/Linux: source venv/bin/activate
+
+# Iniciar el servidor Uvicorn
+uvicorn main:app --reload
 ```
+La API estará disponible en `http://localhost:8000`.
 
-Este comando utilizará `concurrently` para:
-1. Levantar el Backend usando Docker Compose (`npm run dev:backend`), exponiendo la API de FastAPI.
-2. Levantar el Frontend usando el servidor de desarrollo de Next.js (`npm run dev:frontend`), disponible usualmente en http://localhost:3000.
+### 2. Levantar el Frontend (Modo Producción)
+El servidor de desarrollo (`npm run dev`) puede crashear por falta de memoria (Out Of Memory) en sistemas con recursos limitados. Se recomienda compilar el proyecto y correrlo en producción:
 
-Para detener los servicios de Docker del backend, puedes usar:
+En otra terminal separada:
 ```bash
-npm run docker:down
+cd frontend
+npm run build
+npm run start
 ```
+El frontend estará disponible de forma ultra-rápida y estable en `http://localhost:3000`.
 
 ---
 
