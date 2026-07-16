@@ -1,0 +1,8 @@
+# Reglas globales para Cursor/Copilot
+
+- Aplicar siempre las skills del repositorio cuando correspondan.
+- Para mensajes de commit, seguir estrictamente la guía en skills/git_commits/SKILL.md.
+- Para cambios en frontend, seguir skills/frontend_nextjs/SKILL.md.
+- Para cambios en backend, seguir skills/backend_fastapi/SKILL.md.
+- Para análisis de datos, seguir skills/analizador_de_datos/SKILL.md.
+- Para orquestación de tareas, seguir skills/orquestacion/SKILL.md.
