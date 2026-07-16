@@ -135,6 +135,7 @@ export const DescuentoResponseSchema = z.object({
   id_descuento: z.number(),
   porcentaje_descuento: NumericCoerce,
   cant_dia_hospedado: z.number().optional().nullable(),
+  activado: z.boolean(),
 });
 
 export type Descuento = z.infer<typeof DescuentoResponseSchema>;

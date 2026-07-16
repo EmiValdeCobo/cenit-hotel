@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Huesped, DiasRestantesReservacion, EstadiaActiva } from '@/lib/schemas';
+import { ConfirmDialog, AlertDialog } from '@/components/ui/Dialog';
 
 interface Props {
   initialGuests: Huesped[];
@@ -25,9 +26,25 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
   const [checkinResId, setCheckinResId] = useState('');
   const [checkinLoading, setCheckinLoading] = useState(false);
 
+  const [editingGuestId, setEditingGuestId] = useState<number | null>(null);
+
   const [checkoutStay, setCheckoutStay] = useState<EstadiaActiva | null>(null);
   const [metodoPago, setMetodoPago] = useState('EFECTIVO');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // States for custom modals
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    id: number | null;
+  }>({ isOpen: false, id: null });
+
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+    onClose?: () => void;
+  }>({ isOpen: false, title: '', message: '', type: 'info' });
 
   const filteredGuests = guests.filter(g =>
     g.nombre.toLowerCase().includes(search.toLowerCase()) ||
@@ -48,22 +65,45 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
     };
 
     try {
-      const res = await fetch('http://localhost:8000/api/huespedes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.detail?.[0]?.msg || errData.detail || 'Error al registrar huésped');
+      if (editingGuestId) {
+        // UPDATE existing guest
+        const res = await fetch(`http://localhost:8000/api/huespedes/${editingGuestId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.detail?.[0]?.msg || errData.detail || 'Error al actualizar huésped');
+        }
+        const updated = await res.json();
+        setGuests(guests.map(g => g.id_huesped === editingGuestId ? updated : g));
+      } else {
+        // CREATE new guest
+        const res = await fetch('http://localhost:8000/api/huespedes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.detail?.[0]?.msg || errData.detail || 'Error al registrar huésped');
+        }
+        const newGuest = await res.json();
+        setGuests([...guests, newGuest]);
       }
-      const newGuest = await res.json();
-      setGuests([...guests, newGuest]);
       setIsOpen(false);
+      setEditingGuestId(null);
       setNombre('');
       setCorreo('');
       setTelefono('');
       setDocumento('');
+      setAlertDialog({
+        isOpen: true,
+        title: editingGuestId ? 'Huésped Actualizado' : 'Huésped Registrado',
+        message: editingGuestId ? 'Los datos del huésped han sido actualizados.' : 'El huésped ha sido guardado exitosamente en el directorio.',
+        type: 'success'
+      });
     } catch (err: any) {
       setError(err.message || 'Error inesperado');
     } finally {
@@ -83,10 +123,20 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
         const errData = await res.json();
         throw new Error(errData.detail || 'Fallo en check-in');
       }
-      alert('Check-in registrado con éxito!');
-      window.location.reload();
+      setAlertDialog({
+        isOpen: true,
+        title: 'Check-in Exitoso',
+        message: 'La estadía ha sido iniciada con éxito para el huésped.',
+        type: 'success',
+        onClose: () => window.location.reload()
+      });
     } catch (err: any) {
-      alert(err.message);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error de Check-in',
+        message: err.message || 'Ocurrió un error al procesar el check-in.',
+        type: 'error'
+      });
     } finally {
       setCheckinLoading(false);
     }
@@ -112,13 +162,58 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
         const errData = await res.json();
         throw new Error(errData.detail || 'Fallo en checkout');
       }
-      alert('Check-out procesado exitosamente. Factura generada.');
       setCheckoutStay(null);
-      window.location.reload();
+      setAlertDialog({
+        isOpen: true,
+        title: 'Check-out Exitoso',
+        message: 'Check-out procesado exitosamente. La factura ha sido generada.',
+        type: 'success',
+        onClose: () => window.location.reload()
+      });
     } catch (err: any) {
-      alert(err.message);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error de Check-out',
+        message: err.message || 'Ocurrió un error al procesar el check-out.',
+        type: 'error'
+      });
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+
+  const triggerDelete = (id: number) => {
+    setConfirmDialog({ isOpen: true, id });
+  };
+
+  const executeDelete = async (id: number) => {
+    setConfirmDialog({ isOpen: false, id: null });
+    try {
+      const res = await fetch(`http://localhost:8000/api/huespedes/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setGuests(guests.filter(g => g.id_huesped !== id));
+        setAlertDialog({
+          isOpen: true,
+          title: 'Huésped Eliminado',
+          message: 'El registro del huésped ha sido eliminado con éxito.',
+          type: 'success'
+        });
+      } else {
+        setAlertDialog({
+          isOpen: true,
+          title: 'No se puede eliminar',
+          message: 'No se puede eliminar el huésped. Posiblemente tenga reservaciones o estadías activas.',
+          type: 'error'
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error de Red',
+        message: 'No se pudo comunicar con el servidor para eliminar al huésped.',
+        type: 'error'
+      });
     }
   };
 
@@ -157,7 +252,7 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
               <tbody>
                 {filteredGuests.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="p-8 text-center text-outline">No se encontraron huéspedes.</td>
+                    <td colSpan={4} className="p-8 text-center text-outline">No se encontraron huéspedes.</td>
                   </tr>
                 ) : (
                   filteredGuests.map((g) => (
@@ -174,11 +269,13 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
                       <td className="p-4 flex gap-2 justify-end">
                         <button
                           onClick={() => {
+                            setEditingGuestId(g.id_huesped);
                             setNombre(g.nombre);
                             setCorreo(g.correo);
                             setTelefono(g.telefono);
                             setDocumento(g.documento);
                             setTipoDocumento(g.tipo_documento);
+                            setError('');
                             setIsOpen(true);
                           }}
                           className="p-2 bg-surface-variant rounded-lg hover:bg-surface-variant/80 transition-colors"
@@ -186,17 +283,7 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
                           <span className="material-symbols-outlined text-sm text-primary">edit</span>
                         </button>
                         <button
-                          onClick={async () => {
-                            if (confirm('¿Eliminar huésped?')) {
-                              try {
-                                const res = await fetch(`http://localhost:8000/api/huespedes/${g.id_huesped}`, { method: 'DELETE' });
-                                if (res.ok) setGuests(guests.filter(h => h.id_huesped !== g.id_huesped));
-                                else alert('No se puede eliminar el huésped. Posibles dependencias activas.');
-                              } catch (e) {
-                                console.error(e);
-                              }
-                            }
-                          }}
+                          onClick={() => triggerDelete(g.id_huesped)}
                           className="p-2 bg-error-container text-on-error-container rounded-lg hover:bg-error-container/80 transition-colors"
                         >
                           <span className="material-symbols-outlined text-sm">delete</span>
@@ -263,9 +350,9 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
       </div>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-[92vw] sm:max-w-lg max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-surface shadow-2xl relative animate-fade-in border border-surface-variant">
-            <h3 className="text-xl font-bold text-on-background mb-4">Registrar Nuevo Huésped</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full min-w-[320px] sm:min-w-[400px] max-w-lg shrink-0 max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-surface shadow-2xl relative animate-fade-in border border-surface-variant">
+            <h3 className="text-xl font-bold text-on-background mb-4">{editingGuestId ? 'Editar Huésped' : 'Registrar Nuevo Huésped'}</h3>
             {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-xl text-sm">{error}</div>}
 
             <form onSubmit={handleRegister} className="space-y-4">
@@ -326,7 +413,7 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
               <div className="flex gap-4 justify-end pt-4">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => { setIsOpen(false); setEditingGuestId(null); }}
                   className="px-4 py-2 text-outline font-semibold hover:bg-surface-variant/40 rounded-xl"
                 >
                   Cancelar
@@ -345,8 +432,8 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
       )}
 
       {checkoutStay && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-[92vw] sm:max-w-lg max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-surface shadow-2xl relative animate-fade-in border border-surface-variant">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="w-full min-w-[320px] sm:min-w-[400px] max-w-lg shrink-0 max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-surface shadow-2xl relative animate-fade-in border border-surface-variant">
             <h3 className="text-xl font-bold text-on-background mb-4">Procesar Check-out</h3>
             <form onSubmit={handleCheckoutSubmit} className="space-y-4">
               <div className="p-4 bg-surface-container rounded-xl text-sm space-y-1 text-on-surface-variant">
@@ -387,7 +474,28 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
           </div>
         </div>
       )}
+
+      {/* Reusable Dialogs */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="¿Eliminar Huésped?"
+        message="¿Está seguro de eliminar este registro de huésped? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        type="danger"
+        onConfirm={() => confirmDialog.id && executeDelete(confirmDialog.id)}
+        onCancel={() => setConfirmDialog({ isOpen: false, id: null })}
+      />
+
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        type={alertDialog.type}
+        onClose={() => {
+          setAlertDialog({ ...alertDialog, isOpen: false });
+          if (alertDialog.onClose) alertDialog.onClose();
+        }}
+      />
     </div>
   );
 }
-

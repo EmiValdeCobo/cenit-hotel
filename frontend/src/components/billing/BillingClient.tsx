@@ -12,6 +12,7 @@ export default function BillingClient({ initialBills }: Props) {
   const [search, setSearch] = useState('');
   const [selectedBill, setSelectedBill] = useState<FacturaCompleta | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailError, setDetailError] = useState('');
 
   const filteredBills = bills.filter(b =>
     b.nombre_huesped.toLowerCase().includes(search.toLowerCase()) ||
@@ -20,14 +21,18 @@ export default function BillingClient({ initialBills }: Props) {
 
   const fetchDetails = async (id: number) => {
     setLoadingDetails(true);
+    setDetailError('');
     try {
-      const res = await fetch(`http://localhost:8000/api/reportes/factura/${id}`);
+      const res = await fetch(`http://localhost:8000/api/reportes/factura/${id}?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setSelectedBill(data);
+      } else {
+        setDetailError('No se pudo cargar el detalle de la factura.');
       }
     } catch (err) {
       console.error(err);
+      setDetailError('Error de conexión al cargar el detalle.');
     } finally {
       setLoadingDetails(false);
     }
@@ -44,6 +49,12 @@ export default function BillingClient({ initialBills }: Props) {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
+
+      {detailError && (
+        <div className="p-3 bg-error-container text-on-error-container rounded-xl text-sm">
+          {detailError}
+        </div>
+      )}
 
       <div className="glass-card rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -89,8 +100,8 @@ export default function BillingClient({ initialBills }: Props) {
       </div>
 
       {selectedBill && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface-bright border border-surface-variant w-full max-w-[92vw] sm:max-w-lg max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-bright border border-surface-variant w-full min-w-[320px] sm:min-w-[400px] max-w-lg shrink-0 max-h-[90vh] overflow-y-auto rounded-3xl p-6 shadow-2xl relative animate-fade-in">
             <div className="text-center border-b border-dashed border-surface-variant pb-4 mb-4">
               <h3 className="text-2xl font-bold text-primary">CÉNIT BOUTIQUE HOTEL</h3>
               <p className="text-xs text-outline">Factura Electrónica</p>

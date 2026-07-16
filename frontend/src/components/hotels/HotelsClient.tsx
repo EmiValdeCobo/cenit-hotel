@@ -1,5 +1,7 @@
 "use client";
+
 import { useState, useEffect } from 'react';
+import { ConfirmDialog, AlertDialog } from '@/components/ui/Dialog';
 
 export default function HotelsClient() {
   const [hotels, setHotels] = useState<any[]>([]);
@@ -8,12 +10,25 @@ export default function HotelsClient() {
   const [formData, setFormData] = useState({
     nombre: '',
     direccion: '',
-    telefono: '',
-    correo: '',
+    niveles_edificios: 1,
+    descripcion: '',
     estrellas: 3
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  // States for custom modals
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    id: number | null;
+  }>({ isOpen: false, id: null });
+
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({ isOpen: false, title: '', message: '', type: 'info' });
 
   useEffect(() => {
     fetchHotels();
@@ -21,7 +36,7 @@ export default function HotelsClient() {
 
   const fetchHotels = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/hoteles/datos-generales');
+      const res = await fetch(`http://localhost:8000/api/hoteles/datos-generales?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setHotels(data);
@@ -37,15 +52,21 @@ export default function HotelsClient() {
     if (hotel) {
       setEditingId(hotel.id_hotel);
       setFormData({
-        nombre: hotel.nombre_hotel || '',
+        nombre: hotel.nombre_hotel || hotel.nombre || '',
         direccion: hotel.direccion || '',
-        telefono: hotel.telefono || '',
-        correo: hotel.correo || '',
-        estrellas: hotel.estrellas || 3
+        niveles_edificios: hotel.niveles_edificios || 1,
+        descripcion: hotel.descripcion || '',
+        estrellas: Math.round(Number(hotel.calificacion)) || 3
       });
     } else {
       setEditingId(null);
-      setFormData({ nombre: '', direccion: '', telefono: '', correo: '', estrellas: 3 });
+      setFormData({
+        nombre: '',
+        direccion: '',
+        niveles_edificios: 1,
+        descripcion: '',
+        estrellas: 3
+      });
     }
     setIsOpen(true);
   };
@@ -54,43 +75,94 @@ export default function HotelsClient() {
     e.preventDefault();
     setLoading(true);
 
-    // Note: This relies on the backend POST/PUT implementation
     const url = editingId
       ? `http://localhost:8000/api/hoteles/${editingId}`
       : 'http://localhost:8000/api/hoteles';
+
+    // Construct backend payload matching Pydantic schema
+    const payload = {
+      nombre: formData.nombre,
+      direccion: formData.direccion || null,
+      niveles_edificios: Number(formData.niveles_edificios) || 1,
+      calificacion: Number(formData.estrellas),
+      descripcion: formData.descripcion || null
+    };
 
     try {
       const res = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
         setIsOpen(false);
         fetchHotels();
+        setAlertDialog({
+          isOpen: true,
+          title: 'Éxito',
+          message: editingId ? 'El hotel ha sido actualizado con éxito.' : 'El hotel ha sido registrado correctamente.',
+          type: 'success'
+        });
       } else {
-        alert("Error al guardar hotel. Asegúrese de que el backend tenga el endpoint configurado.");
+        const errorData = await res.json().catch(() => ({}));
+        const detailMsg = errorData.detail 
+          ? (typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail)) 
+          : 'Verifique los datos ingresados.';
+        
+        setAlertDialog({
+          isOpen: true,
+          title: 'Error al Guardar',
+          message: `No se pudo registrar el hotel. Detalles: ${detailMsg}`,
+          type: 'error'
+        });
       }
     } catch (err) {
       console.error(err);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error de Red',
+        message: 'Ocurrió un error al intentar comunicarse con el servidor.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('¿Está seguro de eliminar este hotel?')) {
-      try {
-        const res = await fetch(`http://localhost:8000/api/hoteles/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-          setHotels(hotels.filter(h => h.id_hotel !== id));
-        } else {
-          alert("Error al eliminar hotel. Puede que tenga dependencias o el endpoint falte.");
-        }
-      } catch (err) {
-        console.error(err);
+  const triggerDelete = (id: number) => {
+    setConfirmDialog({ isOpen: true, id });
+  };
+
+  const executeDelete = async (id: number) => {
+    setConfirmDialog({ isOpen: false, id: null });
+    try {
+      const res = await fetch(`http://localhost:8000/api/hoteles/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setHotels(hotels.filter(h => h.id_hotel !== id));
+        setAlertDialog({
+          isOpen: true,
+          title: 'Eliminado',
+          message: 'El hotel ha sido eliminado con éxito.',
+          type: 'success'
+        });
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setAlertDialog({
+          isOpen: true,
+          title: 'No se puede eliminar',
+          message: errorData.detail || 'Error al intentar eliminar el hotel. Asegúrese de que no posea habitaciones asociadas.',
+          type: 'error'
+        });
       }
+    } catch (err) {
+      console.error(err);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error de Red',
+        message: 'No se pudo comunicar con el servidor para eliminar el hotel.',
+        type: 'error'
+      });
     }
   };
 
@@ -122,7 +194,7 @@ export default function HotelsClient() {
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="font-bold text-xl text-on-background line-clamp-1">{h.nombre_hotel || h.nombre}</h3>
                   <div className="flex text-amber-400">
-                    {Array.from({ length: h.estrellas || 3 }).map((_, i) => (
+                    {Array.from({ length: Math.round(Number(h.calificacion)) || 3 }).map((_, i) => (
                       <span key={i} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                     ))}
                   </div>
@@ -133,13 +205,12 @@ export default function HotelsClient() {
                     <span className="line-clamp-1">{h.direccion}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm opacity-70">call</span>
-                    <span>{h.telefono}</span>
+                    <span className="material-symbols-outlined text-sm opacity-70">layers</span>
+                    <span>{h.niveles_edificios || 1} Niveles / Pisos</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm opacity-70">mail</span>
-                    <span className="truncate">{h.correo}</span>
-                  </div>
+                  {h.descripcion && (
+                    <p className="text-xs italic mt-2 text-outline line-clamp-2">{h.descripcion}</p>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-surface-variant">
@@ -151,7 +222,7 @@ export default function HotelsClient() {
                   <span className="material-symbols-outlined text-sm text-primary">edit</span>
                 </button>
                 <button
-                  onClick={() => handleDelete(h.id_hotel)}
+                  onClick={() => triggerDelete(h.id_hotel)}
                   className="p-2 bg-error-container text-on-error-container rounded-lg hover:bg-error-container/80 transition-colors"
                   title="Eliminar"
                 >
@@ -164,8 +235,8 @@ export default function HotelsClient() {
       </div>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-surface w-full max-w-[92vw] sm:max-w-lg max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative border border-surface-variant">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface w-full min-w-[320px] sm:min-w-[400px] max-w-lg shrink-0 max-h-[90vh] overflow-y-auto rounded-3xl p-6 shadow-2xl relative border border-surface-variant">
             <button
               onClick={() => setIsOpen(false)}
               className="absolute top-4 right-4 text-outline hover:text-on-surface transition-colors"
@@ -198,33 +269,35 @@ export default function HotelsClient() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-on-surface-variant mb-1">Teléfono</label>
+                  <label className="block text-sm font-medium text-on-surface-variant mb-1">Niveles / Pisos</label>
                   <input
-                    type="tel"
+                    type="number"
+                    min="1"
+                    required
                     className="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-primary"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                    value={formData.niveles_edificios}
+                    onChange={(e) => setFormData({ ...formData, niveles_edificios: parseInt(e.target.value) || 1 })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-on-surface-variant mb-1">Estrellas</label>
+                  <label className="block text-sm font-medium text-on-surface-variant mb-1">Calificación (Estrellas)</label>
                   <input
                     type="number"
                     min="1" max="5"
                     required
                     className="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-primary"
                     value={formData.estrellas}
-                    onChange={(e) => setFormData({ ...formData, estrellas: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, estrellas: parseInt(e.target.value) || 3 })}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-on-surface-variant mb-1">Correo Electrónico</label>
-                <input
-                  type="email"
-                  className="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-primary"
-                  value={formData.correo}
-                  onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                <label className="block text-sm font-medium text-on-surface-variant mb-1">Descripción</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-primary resize-none"
+                  value={formData.descripcion}
+                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 />
               </div>
               <div className="pt-4">
@@ -240,7 +313,25 @@ export default function HotelsClient() {
           </div>
         </div>
       )}
+
+      {/* Reusable Dialogs */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="¿Eliminar Hotel?"
+        message="¿Está seguro de eliminar este hotel? Esta acción no se puede deshacer y fallará si tiene habitaciones asociadas."
+        confirmText="Eliminar"
+        type="danger"
+        onConfirm={() => confirmDialog.id && executeDelete(confirmDialog.id)}
+        onCancel={() => setConfirmDialog({ isOpen: false, id: null })}
+      />
+
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        type={alertDialog.type}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+      />
     </div>
   );
 }
-

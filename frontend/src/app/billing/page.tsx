@@ -2,6 +2,8 @@ import { z } from 'zod';
 import BillingClient from '@/components/billing/BillingClient';
 import { FacturaSimplificadaResponseSchema } from '@/lib/schemas';
 
+export const dynamic = 'force-dynamic';
+
 async function getBills() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const res = await fetch(`${apiBase}/api/reportes/facturas`, { cache: 'no-store' });
@@ -16,8 +18,8 @@ export default async function BillingPage() {
   return (
     <main className="flex-1 overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
       <div className="mb-[40px]">
-        <h2 className="font-headline-md text-headline-md text-on-background">Facturaci�n</h2>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">Historial y control de comprobantes fiscales y pagos del hotel C�nit</p>
+        <h2 className="font-headline-md text-headline-md text-on-background">Facturación</h2>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">Historial y control de comprobantes fiscales y pagos del hotel Cénit</p>
       </div>
       <BillingClient initialBills={bills} />
     </main>

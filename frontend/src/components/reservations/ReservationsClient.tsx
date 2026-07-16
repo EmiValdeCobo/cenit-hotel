@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { DiasRestantesReservacion, Habitacion, Huesped } from '@/lib/schemas';
+import { AlertDialog } from '@/components/ui/Dialog';
 
 interface Props {
   initialReservations: DiasRestantesReservacion[];
@@ -22,6 +23,15 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
   const [fechaEntrada, setFechaEntrada] = useState('');
   const [fechaSalida, setFechaSalida] = useState('');
   const [cantHuespedes, setCantHuespedes] = useState(1);
+
+  // States for custom modals
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+    onClose?: () => void;
+  }>({ isOpen: false, title: '', message: '', type: 'info' });
 
   const filteredReservations = reservations.filter(r => {
     const matchesSearch = r.nombre_huesped?.toLowerCase().includes(search.toLowerCase()) ||
@@ -59,9 +69,14 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
         const errData = await res.json();
         throw new Error(errData.detail || 'Error al crear la reservación');
       }
-      alert('Reservación creada exitosamente!');
       setIsOpen(false);
-      window.location.reload();
+      setAlertDialog({
+        isOpen: true,
+        title: 'Reservación Creada',
+        message: 'La reservación ha sido registrada exitosamente en el sistema.',
+        type: 'success',
+        onClose: () => window.location.reload()
+      });
     } catch (err: any) {
       setError(err.message || 'Error inesperado');
     } finally {
@@ -100,44 +115,42 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
         </button>
       </div>
 
-      <div className="glass-card rounded-2xl overflow-hidden">
+      <div className="glass-card rounded-2xl overflow-hidden p-6">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-variant/40 border-b border-surface-variant font-label-md text-outline">
                 <th className="p-4">Huésped</th>
-                <th className="p-4">Documento / Teléfono</th>
+                <th className="p-4">Días Restantes</th>
                 <th className="p-4">Entrada / Salida</th>
-                <th className="p-4">Atendido por</th>
-                <th className="p-4">Estado</th>
+                <th className="p-4 text-right">Estado</th>
               </tr>
             </thead>
             <tbody>
               {filteredReservations.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-outline">No se encontraron reservaciones.</td>
+                  <td colSpan={4} className="p-8 text-center text-outline">No hay reservaciones que coincidan.</td>
                 </tr>
               ) : (
                 filteredReservations.map((r) => (
                   <tr key={r.id_reservacion} className="border-b border-surface-variant/30 hover:bg-surface-variant/10 transition-colors">
                     <td className="p-4 font-semibold text-on-background">
                       {r.nombre_huesped}
-                      <div className="text-xs text-outline">{r.cant_huespedes_totales} huéspedes</div>
+                      <div className="text-xs font-normal text-outline">{r.documento_huesped}</div>
+                    </td>
+                    <td className="p-4 text-sm font-bold text-secondary">
+                      {r.dias_para_iniciar} días
                     </td>
                     <td className="p-4 text-sm text-on-surface-variant">
-                      <div>DUI: {r.documento_huesped}</div>
-                      <div className="text-xs text-outline">Tel: {r.telefono_huesped}</div>
+                      <div>Entrada: {r.fecha_entrada_proxima}</div>
+                      <div>Salida: {r.fecha_salida_proxima}</div>
                     </td>
-                    <td className="p-4 text-sm text-on-surface-variant">
-                      <div>{r.fecha_entrada_proxima}</div>
-                      <div className="text-xs text-outline">a {r.fecha_salida_proxima}</div>
-                    </td>
-                    <td className="p-4 text-sm text-on-surface-variant">{r.nombre_empleado}</td>
-                    <td className="p-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${r.estado_reservacion === 'CONFIRMADA' ? 'bg-secondary-container text-on-secondary-container' :
-                          r.estado_reservacion === 'PENDIENTE' ? 'bg-tertiary-fixed text-on-tertiary-fixed' :
-                            'bg-surface-variant text-outline'
-                        }`}>
+                    <td className="p-4 text-right">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        r.estado_reservacion === 'PENDIENTE' ? 'bg-tertiary-fixed text-on-tertiary-fixed' :
+                        r.estado_reservacion === 'CONFIRMADA' ? 'bg-secondary-container text-on-secondary-container' :
+                        'bg-surface-variant text-outline'
+                      }`}>
                         {r.estado_reservacion}
                       </span>
                     </td>
@@ -150,8 +163,8 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
       </div>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface-bright border border-surface-variant w-full max-w-[92vw] sm:max-w-lg max-h-[90dvh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-bright border border-surface-variant w-full min-w-[320px] sm:min-w-[400px] max-w-lg shrink-0 max-h-[90vh] overflow-y-auto rounded-3xl p-6 shadow-2xl relative animate-fade-in">
             <h3 className="text-xl font-bold text-on-background mb-4">Nueva Reservación</h3>
             {error && <div className="mb-4 p-3 bg-error-container text-on-error-container rounded-xl text-sm">{error}</div>}
 
@@ -180,9 +193,9 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
                   onChange={(e) => setIdHabitacion(e.target.value)}
                 >
                   <option value="">Selecciona habitación...</option>
-                  {rooms.map(rm => (
-                    <option key={rm.id_habitacion} value={rm.id_habitacion}>
-                      Hab. {rm.numero_habitacion} ({rm.tipo_habitacion}) - ${Number(rm.precio).toFixed(2)}/noche
+                  {rooms.filter(r => r.estado === 'DISPONIBLE').map(r => (
+                    <option key={r.id_habitacion} value={r.id_habitacion}>
+                      Hab. {r.numero_habitacion} ({r.tipo_habitacion}) - ${Number(r.precio).toFixed(2)}/noche
                     </option>
                   ))}
                 </select>
@@ -243,7 +256,18 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
           </div>
         </div>
       )}
+
+      {/* Reusable Dialog */}
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        type={alertDialog.type}
+        onClose={() => {
+          setAlertDialog({ ...alertDialog, isOpen: false });
+          if (alertDialog.onClose) alertDialog.onClose();
+        }}
+      />
     </div>
   );
 }
-

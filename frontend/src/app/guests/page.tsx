@@ -2,6 +2,8 @@ import { z } from 'zod';
 import GuestsClient from '@/components/guests/GuestsClient';
 import { HuespedResponseSchema, DiasRestantesReservacionResponseSchema, EstadiaActivaResponseSchema } from '@/lib/schemas';
 
+export const dynamic = 'force-dynamic';
+
 async function getData() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   
@@ -11,7 +13,7 @@ async function getData() {
     fetch(`${apiBase}/api/estadias/activas`, { cache: 'no-store' })
   ]);
 
-  if (!guestsRes.ok || !resvRes.ok || !staysRes.ok) throw new Error('Fallo al obtener datos de recepci�n');
+  if (!guestsRes.ok || !resvRes.ok || !staysRes.ok) throw new Error('Fallo al obtener datos de recepción');
 
   const guestsJson = await guestsRes.json();
   const resvJson = await resvRes.json();
@@ -30,8 +32,8 @@ export default async function GuestsPage() {
   return (
     <main className="flex-1 overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
       <div className="mb-[40px]">
-        <h2 className="font-headline-md text-headline-md text-on-background">Recepci�n y Hu�spedes</h2>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">Registro de hu�spedes y control de Check-in y Check-out</p>
+        <h2 className="font-headline-md text-headline-md text-on-background">Recepción y Huéspedes</h2>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">Registro de huéspedes y control de Check-in y Check-out</p>
       </div>
       <GuestsClient initialGuests={guests} reservations={reservations} activeStays={activeStays} />
     </main>

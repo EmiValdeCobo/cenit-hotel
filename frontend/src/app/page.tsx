@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { DatosGeneralesHotelResponseSchema, DiasRestantesReservacionResponseSchema } from '@/lib/schemas';
 
+export const dynamic = 'force-dynamic';
+
 async function getDashboardData() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   
@@ -33,7 +35,7 @@ export default async function Dashboard() {
     <main className="flex-1 overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
       <div className="mb-[40px]">
         <h2 className="font-headline-md text-headline-md text-on-background">Dashboard Overview</h2>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">Instant�nea del estado del hotel en tiempo real</p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">Instantánea del estado del hotel en tiempo real</p>
       </div>
       
       {/* Metrics Row */}
@@ -100,15 +102,15 @@ export default async function Dashboard() {
           </div>
         </div>
         
-        {/* Pr�ximas Reservas */}
+        {/* Próximas Reservas */}
         <div className="lg:col-span-1 glass-card rounded-2xl p-0 flex flex-col overflow-hidden">
           <div className="p-6 border-b border-surface-variant flex justify-between items-center bg-surface-bright/50">
-            <h3 className="font-headline-md text-headline-md text-on-background text-2xl">Pr�ximas Reservas</h3>
+            <h3 className="font-headline-md text-headline-md text-on-background text-2xl">Próximas Reservas</h3>
             <span className="material-symbols-outlined text-outline">calendar_today</span>
           </div>
           <ul className="flex-1 overflow-y-auto max-h-[400px]">
             {reservations.length === 0 ? (
-              <p className="p-6 text-center text-outline text-sm">No hay pr�ximas reservas registradas.</p>
+              <p className="p-6 text-center text-outline text-sm">No hay próximas reservas registradas.</p>
             ) : (
               reservations.slice(0, 5).map((r) => (
                 <li key={r.id_reservacion} className="p-4 border-b border-surface-variant flex items-center justify-between hover:bg-secondary-fixed-dim/5 transition-colors cursor-pointer group">
@@ -123,7 +125,7 @@ export default async function Dashboard() {
                   </div>
                   <div className="text-right">
                     <span className="inline-block bg-secondary-container text-on-secondary-container font-label-md text-label-md px-3 py-1 rounded-full">
-                      {r.dias_para_iniciar} d�as
+                      {r.dias_para_iniciar} días
                     </span>
                   </div>
                 </li>

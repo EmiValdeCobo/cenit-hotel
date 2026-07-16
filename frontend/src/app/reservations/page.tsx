@@ -2,6 +2,8 @@ import { z } from 'zod';
 import ReservationsClient from '@/components/reservations/ReservationsClient';
 import { DiasRestantesReservacionResponseSchema, HabitacionDisponibleResponseSchema, HuespedResponseSchema } from '@/lib/schemas';
 
+export const dynamic = 'force-dynamic';
+
 async function getData() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   
@@ -31,7 +33,7 @@ export default async function ReservationsPage() {
     <main className="flex-1 overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
       <div className="mb-[40px]">
         <h2 className="font-headline-md text-headline-md text-on-background">Reservaciones</h2>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">Gesti�n de estad�as y habitaciones del hotel C�nit</p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">Gestión de estadías y habitaciones del hotel Cénit</p>
       </div>
       <ReservationsClient initialReservations={reservations} rooms={rooms} guests={guests} />
     </main>
