@@ -80,7 +80,7 @@ export default function BillingClient({ initialBills }: Props) {
                   <tr key={b.id_factura} className="border-b border-surface-variant/30 hover:bg-surface-variant/10 transition-colors">
                     <td className="p-4 font-bold text-on-background">#FC-{b.id_factura}</td>
                     <td className="p-4 text-on-background">{b.nombre_huesped}</td>
-                    <td className="p-4 text-sm text-on-surface-variant">{new Date(b.fecha).toLocaleDateString()}</td>
+                    <td className="p-4 text-sm text-on-surface-variant">{new Date(b.fecha).toLocaleDateString('es-ES', { timeZone: 'UTC' })}</td>
                     <td className="p-4 text-sm text-on-surface-variant">{b.metodo_pago}</td>
                     <td className="p-4 font-bold text-secondary">${Number(b.total_a_pagar).toFixed(2)}</td>
                     <td className="p-4 text-right">
