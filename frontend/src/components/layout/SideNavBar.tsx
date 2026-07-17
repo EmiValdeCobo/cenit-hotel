@@ -33,11 +33,11 @@ export default function SideNavBar() {
   useEffect(() => {
     const stored = window.localStorage.getItem(SIDENAV_STORAGE_KEY);
     const initialCollapsed = stored === "true";
-    
+
     if (initialCollapsed) {
       setIsCollapsed(true);
     }
-    
+
     document.documentElement.style.setProperty(
       "--sidenav-width",
       initialCollapsed ? SIDENAV_COLLAPSED_WIDTH : SIDENAV_EXPANDED_WIDTH
@@ -87,13 +87,11 @@ export default function SideNavBar() {
               onClick={() => setIsOpen(false)}
               aria-current={active ? "page" : undefined}
               title={collapsed ? item.label : undefined}
-              className={`rounded-lg px-4 py-3 flex items-center gap-3 transition-colors duration-200 ${
-                collapsed ? "justify-center" : ""
-              } ${
-                active
+              className={`rounded-lg px-4 py-3 flex items-center gap-3 transition-colors duration-200 ${collapsed ? "justify-center" : ""
+                } ${active
                   ? "bg-secondary-container text-on-secondary-container font-bold"
                   : "text-primary-fixed-dim hover:text-surface-bright hover:bg-primary-container/50"
-              }`}
+                }`}
             >
               <span
                 className="material-symbols-outlined shrink-0"
@@ -140,9 +138,8 @@ export default function SideNavBar() {
 
       {/* Panel de navegacion movil: se desliza desde la izquierda. */}
       <nav
-        className={`md:hidden fixed left-0 top-0 h-screen w-72 max-w-[80vw] overflow-y-auto bg-primary-container z-50 flex flex-col py-6 shadow-lg shadow-primary/10 transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`md:hidden fixed left-0 top-0 h-screen w-72 max-w-[80vw] overflow-y-auto bg-primary-container z-50 flex flex-col py-6 shadow-lg shadow-primary/10 transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
           <span className="font-headline-md text-headline-md text-surface-bright">Cenit</span>
@@ -188,9 +185,8 @@ export default function SideNavBar() {
           El ancho anima entre expandido y colapsado, y esta sincronizado con
           --sidenav-width para que el contenido de la pagina se desplace igual. */}
       <nav
-        className={`hidden md:flex h-screen fixed left-0 top-0 overflow-y-auto shadow-lg shadow-primary/10 z-40 flex-col py-6 bg-primary-container dark:bg-primary-container transition-[width] duration-300 ease-in-out ${
-          isCollapsed ? "w-20" : "w-64"
-        }`}
+        className={`hidden md:flex h-screen fixed left-0 top-0 overflow-y-auto shadow-lg shadow-primary/10 z-40 flex-col py-6 bg-primary-container dark:bg-primary-container transition-[width] duration-300 ease-in-out ${isCollapsed ? "w-20" : "w-64"
+          }`}
       >
         <div className={`flex items-center mb-2 ${isCollapsed ? "justify-center px-2" : "justify-between px-4"}`}>
           {!isCollapsed && (

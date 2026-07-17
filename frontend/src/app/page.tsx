@@ -33,13 +33,13 @@ export default async function Dashboard() {
 
   return (
     <main className="flex-1 flex flex-col overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
-      <div className="mb-[40px]">
+      <div className="mb-[40px] shrink-0">
         <h2 className="font-headline-md text-headline-md text-on-background">Dashboard Overview</h2>
         <p className="font-body-sm text-body-sm text-on-surface-variant">Instantánea del estado del hotel en tiempo real</p>
       </div>
       
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-[40px] overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-[40px] shrink-0">
         <div className="glass-card rounded-2xl p-6 transition-all hover:shadow-ambient-hover hover:-translate-y-1 duration-300">
           <div className="flex justify-between items-start mb-4">
             <div className="p-3 bg-secondary-container/20 rounded-xl">
@@ -82,7 +82,7 @@ export default async function Dashboard() {
       </div>
       
       {/* Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px] overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px] shrink-0">
         <div className="lg:col-span-2 glass-card rounded-2xl p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-headline-md text-headline-md text-on-background">Detalles del Complejo</h3>
@@ -113,18 +113,18 @@ export default async function Dashboard() {
               <p className="p-6 text-center text-outline text-sm">No hay próximas reservas registradas.</p>
             ) : (
               reservations.slice(0, 5).map((r) => (
-                <li key={r.id_reservacion} className="p-4 border-b border-surface-variant flex items-center justify-between hover:bg-secondary-fixed-dim/5 transition-colors cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary-container font-bold text-label-md">
+                <li key={r.id_reservacion} className="p-4 border-b border-surface-variant flex items-center justify-between gap-3 hover:bg-secondary-fixed-dim/5 transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary-container font-bold text-label-md shrink-0">
                       {r.nombre_huesped.slice(0, 2).toUpperCase()}
                     </div>
-                    <div>
-                      <p className="font-body-md text-body-md font-semibold text-on-background">{r.nombre_huesped}</p>
+                    <div className="min-w-0">
+                      <p className="font-body-md text-body-md font-semibold text-on-background truncate">{r.nombre_huesped}</p>
                       <p className="font-label-md text-label-md text-outline">{r.fecha_entrada_proxima} al {r.fecha_salida_proxima}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="inline-block bg-secondary-container text-on-secondary-container font-label-md text-label-md px-3 py-1 rounded-full">
+                  <div className="text-right shrink-0">
+                    <span className="inline-block whitespace-nowrap bg-secondary-container text-on-secondary-container font-label-md text-label-md px-3 py-1 rounded-full">
                       {r.dias_para_iniciar} días
                     </span>
                   </div>
