@@ -209,12 +209,7 @@ export default function SideNavBar() {
         {renderNavList(isCollapsed)}
 
         <div className={`mt-auto flex flex-col gap-4 ${isCollapsed ? "px-2" : "px-4"}`}>
-          <div className={`flex ${isCollapsed ? "justify-center" : "items-center justify-between"}`}>
-            {!isCollapsed && (
-              <span className="font-label-md text-label-md text-primary-fixed-dim select-none">
-                Modo Nocturno
-              </span>
-            )}
+          <div className={`flex items-center justify-center`}>
             <button
               type="button"
               onClick={toggleTheme}
