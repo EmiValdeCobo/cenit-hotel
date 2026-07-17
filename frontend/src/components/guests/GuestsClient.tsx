@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Huesped, DiasRestantesReservacion, EstadiaActiva } from '@/lib/schemas';
 import { ConfirmDialog, AlertDialog } from '@/components/ui/Dialog';
+import SearchableCombobox from '@/components/ui/SearchableCombobox';
 
 interface Props {
   initialGuests: Huesped[];
@@ -223,6 +224,12 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
     }
   };
 
+  const pendingReservationOptions = reservations.filter(r => r.estado_reservacion === 'PENDIENTE').map(r => ({
+    value: r.id_reservacion,
+    label: r.nombre_huesped,
+    sublabel: `Entrada: ${r.fecha_entrada_proxima || 'N/D'} | Doc: ${r.documento_huesped}`
+  }));
+
   return (
     <div className="space-y-6 flex-1 flex flex-col">
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full">
@@ -307,18 +314,12 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
           <div className="glass-card rounded-2xl p-6">
             <h3 className="font-headline-md text-on-background text-lg mb-4">Realizar Check-in</h3>
             <div className="space-y-4">
-              <select
-                className="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none"
+              <SearchableCombobox
+                placeholder="Selecciona reserva pendiente..."
+                options={pendingReservationOptions}
                 value={checkinResId}
-                onChange={(e) => setCheckinResId(e.target.value)}
-              >
-                <option value="">Selecciona reserva pendiente...</option>
-                {reservations.filter(r => r.estado_reservacion === 'PENDIENTE').map(r => (
-                  <option key={r.id_reservacion} value={r.id_reservacion}>
-                    {r.nombre_huesped} ({r.fecha_entrada_proxima})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setCheckinResId(String(val))}
+              />
               <button
                 onClick={() => checkinResId && handleCheckin(Number(checkinResId))}
                 disabled={!checkinResId || checkinLoading}

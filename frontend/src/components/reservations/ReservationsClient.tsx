@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { DiasRestantesReservacion, Habitacion, Huesped } from '@/lib/schemas';
 import { AlertDialog } from '@/components/ui/Dialog';
+import SearchableCombobox from '@/components/ui/SearchableCombobox';
 
 interface Props {
   initialReservations: DiasRestantesReservacion[];
@@ -83,6 +84,18 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
       setLoading(false);
     }
   };
+
+  const guestOptions = guests.map(g => ({
+    value: g.id_huesped,
+    label: g.nombre,
+    sublabel: `DUI/Pasaporte: ${g.documento} | Correo: ${g.correo || 'N/D'}`
+  }));
+
+  const roomOptions = rooms.filter(r => r.estado === 'DISPONIBLE').map(r => ({
+    value: r.id_habitacion,
+    label: `Habitación ${r.numero_habitacion}`,
+    sublabel: `${r.tipo_habitacion} — $${Number(r.precio).toFixed(2)}/noche`
+  }));
 
   return (
     <div className="space-y-6 flex-1 flex flex-col">
@@ -171,34 +184,24 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-outline uppercase tracking-wider mb-1">Huésped</label>
-                <select
+                <SearchableCombobox
                   required
-                  className="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none"
+                  placeholder="Selecciona un huésped..."
+                  options={guestOptions}
                   value={idHuesped}
-                  onChange={(e) => setIdHuesped(e.target.value)}
-                >
-                  <option value="">Selecciona un huésped...</option>
-                  {guests.map(g => (
-                    <option key={g.id_huesped} value={g.id_huesped}>{g.nombre} ({g.documento})</option>
-                  ))}
-                </select>
+                  onChange={(val) => setIdHuesped(String(val))}
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-outline uppercase tracking-wider mb-1">Habitación Disponible</label>
-                <select
+                <SearchableCombobox
                   required
-                  className="w-full px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none"
+                  placeholder="Selecciona habitación..."
+                  options={roomOptions}
                   value={idHabitacion}
-                  onChange={(e) => setIdHabitacion(e.target.value)}
-                >
-                  <option value="">Selecciona habitación...</option>
-                  {rooms.filter(r => r.estado === 'DISPONIBLE').map(r => (
-                    <option key={r.id_habitacion} value={r.id_habitacion}>
-                      Hab. {r.numero_habitacion} ({r.tipo_habitacion}) - ${Number(r.precio).toFixed(2)}/noche
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setIdHabitacion(String(val))}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
