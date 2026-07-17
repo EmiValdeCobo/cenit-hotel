@@ -56,3 +56,7 @@ Este comando levantará los servicios estipulados, que habitualmente incluyen el
 
 Una vez el servidor esté en ejecución, puedes explorar y probar todos los endpoints a través de la documentación interactiva provista por Swagger UI:
 [http://localhost:8000/docs](http://localhost:8000/docs)
+
+Además, dispones de una explicación detallada y estática de las reglas de negocio y esquemas en:
+[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
+
