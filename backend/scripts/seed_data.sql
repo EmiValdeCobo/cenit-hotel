@@ -57,8 +57,8 @@ DECLARE
     v_id_hotel bigint;
     v_nueva_calificacion numeric(2,1);
 BEGIN 
-    -- 1. Se obtiene el ID del hotel relacionado a la nueva rese├▒a
-    -- LIMIT 1 por si la reservaci├│n tiene m├║ltiples habitaciones para el mismo hotel
+    -- 1. Se obtiene el ID del hotel relacionado a la nueva reseña
+    -- LIMIT 1 por si la reservación tiene múltiples habitaciones para el mismo hotel
     SELECT hab.id_hotel INTO v_id_hotel
     FROM estadia est
     INNER JOIN detalle_reservacion det ON est.id_reservacion = det.id_reservacion
@@ -66,7 +66,7 @@ BEGIN
     WHERE est.id_estadia = NEW.id_estadia
     LIMIT 1;
     
-    -- 2. Calcula el promedio de calificaci├│n para ese hotel
+    -- 2. Calcula el promedio de calificación para ese hotel
     -- ROUND a 1 decimal para que coincida con la calificacion de la tabla
     SELECT ROUND(AVG(r.calificacion), 1) INTO v_nueva_calificacion
     FROM resenia r
@@ -560,14 +560,14 @@ BEGIN
         SELECT 1 
         FROM detalle_reservacion 
         WHERE id_habitacion = NEW.id_habitacion 
-          -- Esta es la l├│gica matem├ítica para detectar si dos rangos de fecha se cruzan
+          -- Esta es la lógica matemática para detectar si dos rangos de fecha se cruzan
           AND fecha_entrada < NEW.fecha_salida 
           AND fecha_salida > NEW.fecha_entrada
           -- Esto evita que marque error si estamos actualizando (UPDATE) la misma reserva
           AND id_detalle_reservacion IS DISTINCT FROM NEW.id_detalle_reservacion
     ) THEN
-        -- Si encuentra un choque, aborta la operaci├│n y lanza este mensaje
-        RAISE EXCEPTION 'La habitaci├│n % ya est├í reservada en esas fechas.', NEW.id_habitacion;
+        -- Si encuentra un choque, aborta la operación y lanza este mensaje
+        RAISE EXCEPTION 'La habitación % ya está reservada en esas fechas.', NEW.id_habitacion;
     END IF;
 
     -- Si no hay choques, deja pasar los datos (retorna NEW)
@@ -1944,10 +1944,10 @@ COPY public.aumento_costos (id_aumento_costo, porcentaje_aumento, fecha_inicio, 
 4	20.00	2027-12-15	2028-01-05	Navidad 2027	f
 5	15.00	2027-03-20	2027-03-30	Semana Santa 2027	f
 6	5.00	2027-08-01	2027-08-07	Agostinas 2027	f
-7	8.00	2026-11-01	2026-11-03	D??a de Muertos 2026	t
+7	8.00	2026-11-01	2026-11-03	Día de Muertos 2026	t
 8	12.00	2026-09-14	2026-09-16	Independencia 2026	t
-9	10.00	2026-05-01	2026-05-03	D??a del Trabajo 2026	t
-10	25.00	2026-12-30	2027-01-02	Fin de A??o 2026	t
+9	10.00	2026-05-01	2026-05-03	Día del Trabajo 2026	t
+10	25.00	2026-12-30	2027-01-02	Fin de Año 2026	t
 \.
 
 
@@ -1958,45 +1958,45 @@ COPY public.aumento_costos (id_aumento_costo, porcentaje_aumento, fecha_inicio, 
 --
 
 COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitacion, id_tipo_comodidad, detalle) FROM stdin;
-1	7	1	Disponible bajo petici??n
+1	7	1	Disponible bajo petición
 2	8	7	Incluido en la tarifa
-3	6	8	Disponible bajo petici??n
+3	6	8	Disponible bajo petición
 4	7	4	Mantenimiento mensual
 5	4	3	Incluido en la tarifa
 6	9	4	Mantenimiento mensual
 7	1	1	Incluido en la tarifa
-8	1	10	Disponible bajo petici??n
+8	1	10	Disponible bajo petición
 9	9	10	Mantenimiento mensual
-10	4	8	Disponible bajo petici??n
-11	10	4	Requiere activaci??n previa
+10	4	8	Disponible bajo petición
+11	10	4	Requiere activación previa
 12	3	8	Incluido en la tarifa
-13	9	4	Disponible bajo petici??n
-14	6	8	Requiere activaci??n previa
+13	9	4	Disponible bajo petición
+14	6	8	Requiere activación previa
 15	8	3	Mantenimiento mensual
-16	6	5	Disponible bajo petici??n
-17	1	8	Requiere activaci??n previa
+16	6	5	Disponible bajo petición
+17	1	8	Requiere activación previa
 18	5	5	Incluido en la tarifa
-19	3	10	Disponible bajo petici??n
+19	3	10	Disponible bajo petición
 20	9	10	Mantenimiento mensual
 21	5	7	Incluido en la tarifa
-22	3	1	Requiere activaci??n previa
-23	4	1	Disponible bajo petici??n
+22	3	1	Requiere activación previa
+23	4	1	Disponible bajo petición
 24	2	5	Mantenimiento mensual
-25	3	3	Disponible bajo petici??n
+25	3	3	Disponible bajo petición
 26	6	6	Incluido en la tarifa
 27	9	9	Incluido en la tarifa
 28	2	1	Mantenimiento mensual
 29	3	1	Incluido en la tarifa
-30	4	5	Requiere activaci??n previa
-31	3	7	Requiere activaci??n previa
+30	4	5	Requiere activación previa
+31	3	7	Requiere activación previa
 32	5	10	Mantenimiento mensual
-33	9	10	Disponible bajo petici??n
+33	9	10	Disponible bajo petición
 34	7	2	Mantenimiento mensual
-35	9	6	Disponible bajo petici??n
-36	6	3	Disponible bajo petici??n
+35	9	6	Disponible bajo petición
+36	6	3	Disponible bajo petición
 37	8	5	Incluido en la tarifa
-38	1	1	Disponible bajo petici??n
-39	4	10	Requiere activaci??n previa
+38	1	1	Disponible bajo petición
+39	4	10	Requiere activación previa
 40	7	5	Incluido en la tarifa
 41	6	7	Incluido en la tarifa
 42	9	1	Mantenimiento mensual
@@ -2006,120 +2006,120 @@ COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitaci
 46	6	8	Incluido en la tarifa
 47	5	1	Incluido en la tarifa
 48	6	9	Incluido en la tarifa
-49	6	5	Disponible bajo petici??n
+49	6	5	Disponible bajo petición
 50	3	3	Mantenimiento mensual
-51	8	7	Disponible bajo petici??n
+51	8	7	Disponible bajo petición
 52	5	8	Incluido en la tarifa
 53	4	6	Mantenimiento mensual
-54	3	9	Disponible bajo petici??n
+54	3	9	Disponible bajo petición
 55	6	3	Incluido en la tarifa
 56	1	8	Mantenimiento mensual
-57	7	10	Requiere activaci??n previa
-58	4	4	Disponible bajo petici??n
+57	7	10	Requiere activación previa
+58	4	4	Disponible bajo petición
 59	8	7	Incluido en la tarifa
-60	5	3	Disponible bajo petici??n
+60	5	3	Disponible bajo petición
 61	6	4	Incluido en la tarifa
-62	9	2	Requiere activaci??n previa
+62	9	2	Requiere activación previa
 63	10	5	Mantenimiento mensual
-64	10	9	Requiere activaci??n previa
+64	10	9	Requiere activación previa
 65	3	7	Incluido en la tarifa
 66	3	10	Incluido en la tarifa
-67	10	5	Requiere activaci??n previa
+67	10	5	Requiere activación previa
 68	10	2	Incluido en la tarifa
-69	8	6	Disponible bajo petici??n
+69	8	6	Disponible bajo petición
 70	6	3	Mantenimiento mensual
 71	5	9	Incluido en la tarifa
 72	6	7	Mantenimiento mensual
-73	2	2	Disponible bajo petici??n
-74	8	7	Disponible bajo petici??n
-75	9	10	Requiere activaci??n previa
+73	2	2	Disponible bajo petición
+74	8	7	Disponible bajo petición
+75	9	10	Requiere activación previa
 76	7	4	Incluido en la tarifa
 77	5	7	Mantenimiento mensual
 78	8	3	Incluido en la tarifa
 79	4	2	Incluido en la tarifa
 80	7	5	Incluido en la tarifa
 81	8	7	Mantenimiento mensual
-82	5	10	Disponible bajo petici??n
-83	3	2	Disponible bajo petici??n
-84	5	10	Requiere activaci??n previa
+82	5	10	Disponible bajo petición
+83	3	2	Disponible bajo petición
+84	5	10	Requiere activación previa
 85	4	1	Incluido en la tarifa
-86	1	2	Disponible bajo petici??n
+86	1	2	Disponible bajo petición
 87	2	2	Mantenimiento mensual
-88	7	9	Requiere activaci??n previa
+88	7	9	Requiere activación previa
 89	2	8	Mantenimiento mensual
-90	8	5	Disponible bajo petici??n
-91	1	1	Requiere activaci??n previa
-92	2	3	Disponible bajo petici??n
+90	8	5	Disponible bajo petición
+91	1	1	Requiere activación previa
+92	2	3	Disponible bajo petición
 93	2	3	Mantenimiento mensual
 94	5	7	Mantenimiento mensual
 95	8	3	Incluido en la tarifa
-96	9	5	Disponible bajo petici??n
+96	9	5	Disponible bajo petición
 97	3	6	Incluido en la tarifa
 98	5	6	Mantenimiento mensual
-99	8	6	Requiere activaci??n previa
+99	8	6	Requiere activación previa
 100	8	10	Mantenimiento mensual
 101	6	10	Incluido en la tarifa
-102	4	1	Disponible bajo petici??n
+102	4	1	Disponible bajo petición
 103	10	10	Mantenimiento mensual
 104	10	6	Incluido en la tarifa
-105	2	6	Requiere activaci??n previa
-106	3	6	Requiere activaci??n previa
+105	2	6	Requiere activación previa
+106	3	6	Requiere activación previa
 107	4	5	Incluido en la tarifa
-108	6	6	Disponible bajo petici??n
+108	6	6	Disponible bajo petición
 109	1	4	Incluido en la tarifa
-110	7	4	Disponible bajo petici??n
+110	7	4	Disponible bajo petición
 111	10	1	Mantenimiento mensual
-112	8	2	Requiere activaci??n previa
+112	8	2	Requiere activación previa
 113	6	8	Mantenimiento mensual
-114	1	5	Requiere activaci??n previa
+114	1	5	Requiere activación previa
 115	9	6	Incluido en la tarifa
-116	8	1	Disponible bajo petici??n
+116	8	1	Disponible bajo petición
 117	9	10	Mantenimiento mensual
-118	1	2	Requiere activaci??n previa
-119	4	6	Requiere activaci??n previa
+118	1	2	Requiere activación previa
+119	4	6	Requiere activación previa
 120	5	3	Incluido en la tarifa
 121	4	3	Incluido en la tarifa
 122	4	1	Mantenimiento mensual
 123	1	10	Mantenimiento mensual
-124	9	10	Requiere activaci??n previa
-125	2	6	Disponible bajo petici??n
-126	4	10	Disponible bajo petici??n
+124	9	10	Requiere activación previa
+125	2	6	Disponible bajo petición
+126	4	10	Disponible bajo petición
 127	3	1	Incluido en la tarifa
 128	6	7	Mantenimiento mensual
 129	2	10	Mantenimiento mensual
 130	9	10	Mantenimiento mensual
 131	8	7	Mantenimiento mensual
 132	6	5	Mantenimiento mensual
-133	4	3	Disponible bajo petici??n
-134	3	9	Requiere activaci??n previa
-135	7	6	Disponible bajo petici??n
-136	3	10	Requiere activaci??n previa
+133	4	3	Disponible bajo petición
+134	3	9	Requiere activación previa
+135	7	6	Disponible bajo petición
+136	3	10	Requiere activación previa
 137	6	9	Incluido en la tarifa
-138	7	5	Requiere activaci??n previa
+138	7	5	Requiere activación previa
 139	7	3	Mantenimiento mensual
 140	9	7	Incluido en la tarifa
 141	1	5	Mantenimiento mensual
 142	10	1	Incluido en la tarifa
 143	9	1	Incluido en la tarifa
-144	6	3	Disponible bajo petici??n
-145	4	2	Requiere activaci??n previa
-146	5	6	Requiere activaci??n previa
-147	5	9	Requiere activaci??n previa
-148	4	8	Requiere activaci??n previa
-149	1	9	Requiere activaci??n previa
-150	5	1	Disponible bajo petici??n
-151	8	2	Requiere activaci??n previa
-152	7	3	Disponible bajo petici??n
-153	6	6	Requiere activaci??n previa
+144	6	3	Disponible bajo petición
+145	4	2	Requiere activación previa
+146	5	6	Requiere activación previa
+147	5	9	Requiere activación previa
+148	4	8	Requiere activación previa
+149	1	9	Requiere activación previa
+150	5	1	Disponible bajo petición
+151	8	2	Requiere activación previa
+152	7	3	Disponible bajo petición
+153	6	6	Requiere activación previa
 154	7	10	Mantenimiento mensual
 155	7	1	Mantenimiento mensual
-156	8	9	Disponible bajo petici??n
-157	2	6	Requiere activaci??n previa
-158	2	7	Requiere activaci??n previa
-159	8	7	Disponible bajo petici??n
+156	8	9	Disponible bajo petición
+157	2	6	Requiere activación previa
+158	2	7	Requiere activación previa
+159	8	7	Disponible bajo petición
 160	1	9	Incluido en la tarifa
-161	8	6	Disponible bajo petici??n
-162	10	7	Requiere activaci??n previa
+161	8	6	Disponible bajo petición
+162	10	7	Requiere activación previa
 163	6	6	Incluido en la tarifa
 164	9	10	Incluido en la tarifa
 165	10	1	Mantenimiento mensual
@@ -2128,355 +2128,355 @@ COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitaci
 168	6	2	Mantenimiento mensual
 169	6	4	Incluido en la tarifa
 170	4	2	Mantenimiento mensual
-171	10	8	Requiere activaci??n previa
+171	10	8	Requiere activación previa
 172	6	8	Mantenimiento mensual
 173	6	5	Mantenimiento mensual
-174	10	2	Requiere activaci??n previa
+174	10	2	Requiere activación previa
 175	5	1	Mantenimiento mensual
-176	9	2	Disponible bajo petici??n
+176	9	2	Disponible bajo petición
 177	3	7	Mantenimiento mensual
 178	10	8	Mantenimiento mensual
 179	3	10	Incluido en la tarifa
-180	3	10	Requiere activaci??n previa
-181	6	10	Disponible bajo petici??n
+180	3	10	Requiere activación previa
+181	6	10	Disponible bajo petición
 182	2	7	Mantenimiento mensual
-183	3	10	Disponible bajo petici??n
+183	3	10	Disponible bajo petición
 184	5	8	Incluido en la tarifa
 185	10	1	Incluido en la tarifa
 186	2	5	Incluido en la tarifa
-187	8	6	Disponible bajo petici??n
+187	8	6	Disponible bajo petición
 188	7	1	Mantenimiento mensual
 189	9	4	Incluido en la tarifa
 190	6	6	Mantenimiento mensual
-191	7	8	Disponible bajo petici??n
+191	7	8	Disponible bajo petición
 192	6	9	Incluido en la tarifa
-193	9	3	Requiere activaci??n previa
+193	9	3	Requiere activación previa
 194	9	1	Incluido en la tarifa
 195	5	5	Incluido en la tarifa
 196	9	5	Mantenimiento mensual
-197	6	10	Disponible bajo petici??n
+197	6	10	Disponible bajo petición
 198	2	8	Incluido en la tarifa
 199	2	8	Mantenimiento mensual
-200	3	4	Disponible bajo petici??n
-201	8	4	Requiere activaci??n previa
-202	3	8	Requiere activaci??n previa
-203	10	10	Requiere activaci??n previa
+200	3	4	Disponible bajo petición
+201	8	4	Requiere activación previa
+202	3	8	Requiere activación previa
+203	10	10	Requiere activación previa
 204	2	10	Mantenimiento mensual
 205	10	2	Mantenimiento mensual
 206	8	5	Mantenimiento mensual
 207	9	6	Mantenimiento mensual
 208	1	7	Mantenimiento mensual
-209	3	8	Disponible bajo petici??n
+209	3	8	Disponible bajo petición
 210	10	5	Mantenimiento mensual
-211	6	1	Disponible bajo petici??n
-212	7	5	Requiere activaci??n previa
+211	6	1	Disponible bajo petición
+212	7	5	Requiere activación previa
 213	4	3	Incluido en la tarifa
-214	8	3	Disponible bajo petici??n
+214	8	3	Disponible bajo petición
 215	7	7	Incluido en la tarifa
-216	7	5	Requiere activaci??n previa
+216	7	5	Requiere activación previa
 217	1	9	Incluido en la tarifa
 218	5	3	Incluido en la tarifa
-219	9	10	Disponible bajo petici??n
+219	9	10	Disponible bajo petición
 220	6	1	Incluido en la tarifa
 221	10	6	Mantenimiento mensual
 222	7	9	Mantenimiento mensual
 223	1	4	Incluido en la tarifa
-224	4	5	Disponible bajo petici??n
-225	1	4	Requiere activaci??n previa
+224	4	5	Disponible bajo petición
+225	1	4	Requiere activación previa
 226	5	9	Incluido en la tarifa
-227	1	5	Requiere activaci??n previa
-228	5	2	Disponible bajo petici??n
-229	1	6	Requiere activaci??n previa
+227	1	5	Requiere activación previa
+228	5	2	Disponible bajo petición
+229	1	6	Requiere activación previa
 230	5	4	Incluido en la tarifa
-231	10	2	Disponible bajo petici??n
+231	10	2	Disponible bajo petición
 232	7	7	Incluido en la tarifa
 233	5	2	Mantenimiento mensual
 234	10	10	Incluido en la tarifa
 235	4	1	Mantenimiento mensual
-236	10	7	Disponible bajo petici??n
-237	5	4	Requiere activaci??n previa
-238	10	3	Disponible bajo petici??n
+236	10	7	Disponible bajo petición
+237	5	4	Requiere activación previa
+238	10	3	Disponible bajo petición
 239	5	2	Incluido en la tarifa
-240	8	5	Disponible bajo petici??n
-241	1	6	Requiere activaci??n previa
+240	8	5	Disponible bajo petición
+241	1	6	Requiere activación previa
 242	10	7	Incluido en la tarifa
 243	6	4	Mantenimiento mensual
 244	9	9	Mantenimiento mensual
 245	9	4	Incluido en la tarifa
-246	4	10	Disponible bajo petici??n
+246	4	10	Disponible bajo petición
 247	2	1	Incluido en la tarifa
-248	5	5	Disponible bajo petici??n
+248	5	5	Disponible bajo petición
 249	4	10	Mantenimiento mensual
-250	8	6	Requiere activaci??n previa
-251	5	10	Requiere activaci??n previa
-252	8	7	Disponible bajo petici??n
+250	8	6	Requiere activación previa
+251	5	10	Requiere activación previa
+252	8	7	Disponible bajo petición
 253	3	6	Incluido en la tarifa
-254	7	9	Requiere activaci??n previa
-255	1	4	Disponible bajo petici??n
+254	7	9	Requiere activación previa
+255	1	4	Disponible bajo petición
 256	2	7	Incluido en la tarifa
-257	9	8	Disponible bajo petici??n
-258	6	7	Requiere activaci??n previa
+257	9	8	Disponible bajo petición
+258	6	7	Requiere activación previa
 259	3	10	Incluido en la tarifa
-260	9	8	Requiere activaci??n previa
+260	9	8	Requiere activación previa
 261	10	5	Incluido en la tarifa
-262	2	1	Requiere activaci??n previa
-263	3	1	Requiere activaci??n previa
-264	10	10	Requiere activaci??n previa
-265	6	9	Disponible bajo petici??n
-266	8	4	Requiere activaci??n previa
-267	5	5	Disponible bajo petici??n
-268	4	4	Disponible bajo petici??n
+262	2	1	Requiere activación previa
+263	3	1	Requiere activación previa
+264	10	10	Requiere activación previa
+265	6	9	Disponible bajo petición
+266	8	4	Requiere activación previa
+267	5	5	Disponible bajo petición
+268	4	4	Disponible bajo petición
 269	3	6	Mantenimiento mensual
-270	9	6	Disponible bajo petici??n
+270	9	6	Disponible bajo petición
 271	4	10	Incluido en la tarifa
 272	4	9	Incluido en la tarifa
-273	7	7	Requiere activaci??n previa
+273	7	7	Requiere activación previa
 274	8	9	Mantenimiento mensual
-275	2	4	Requiere activaci??n previa
+275	2	4	Requiere activación previa
 276	10	6	Incluido en la tarifa
 277	10	5	Mantenimiento mensual
-278	4	2	Requiere activaci??n previa
-279	5	10	Requiere activaci??n previa
+278	4	2	Requiere activación previa
+279	5	10	Requiere activación previa
 280	10	2	Incluido en la tarifa
 281	10	2	Mantenimiento mensual
-282	1	7	Disponible bajo petici??n
+282	1	7	Disponible bajo petición
 283	10	6	Incluido en la tarifa
-284	8	9	Requiere activaci??n previa
+284	8	9	Requiere activación previa
 285	4	5	Incluido en la tarifa
 286	10	6	Incluido en la tarifa
 287	9	10	Incluido en la tarifa
-288	4	1	Requiere activaci??n previa
+288	4	1	Requiere activación previa
 289	4	4	Incluido en la tarifa
-290	3	1	Disponible bajo petici??n
-291	2	6	Disponible bajo petici??n
+290	3	1	Disponible bajo petición
+291	2	6	Disponible bajo petición
 292	8	9	Incluido en la tarifa
 293	7	9	Incluido en la tarifa
 294	2	9	Mantenimiento mensual
 295	2	3	Mantenimiento mensual
-296	9	2	Disponible bajo petici??n
+296	9	2	Disponible bajo petición
 297	6	7	Incluido en la tarifa
-298	1	2	Requiere activaci??n previa
+298	1	2	Requiere activación previa
 299	9	8	Mantenimiento mensual
-300	3	3	Requiere activaci??n previa
-301	1	7	Disponible bajo petici??n
-302	8	6	Requiere activaci??n previa
-303	2	10	Requiere activaci??n previa
+300	3	3	Requiere activación previa
+301	1	7	Disponible bajo petición
+302	8	6	Requiere activación previa
+303	2	10	Requiere activación previa
 304	10	2	Incluido en la tarifa
 305	3	10	Incluido en la tarifa
 306	9	10	Incluido en la tarifa
-307	2	4	Requiere activaci??n previa
+307	2	4	Requiere activación previa
 308	6	3	Incluido en la tarifa
-309	1	2	Disponible bajo petici??n
-310	4	10	Disponible bajo petici??n
+309	1	2	Disponible bajo petición
+310	4	10	Disponible bajo petición
 311	6	5	Mantenimiento mensual
-312	5	2	Disponible bajo petici??n
+312	5	2	Disponible bajo petición
 313	1	5	Incluido en la tarifa
-314	8	7	Disponible bajo petici??n
-315	4	1	Disponible bajo petici??n
-316	3	1	Disponible bajo petici??n
-317	3	4	Disponible bajo petici??n
-318	5	6	Disponible bajo petici??n
+314	8	7	Disponible bajo petición
+315	4	1	Disponible bajo petición
+316	3	1	Disponible bajo petición
+317	3	4	Disponible bajo petición
+318	5	6	Disponible bajo petición
 319	5	6	Incluido en la tarifa
-320	7	3	Requiere activaci??n previa
-321	1	10	Requiere activaci??n previa
-322	10	5	Disponible bajo petici??n
+320	7	3	Requiere activación previa
+321	1	10	Requiere activación previa
+322	10	5	Disponible bajo petición
 323	2	9	Incluido en la tarifa
 324	5	7	Incluido en la tarifa
-325	5	7	Disponible bajo petici??n
-326	6	5	Requiere activaci??n previa
-327	10	10	Disponible bajo petici??n
+325	5	7	Disponible bajo petición
+326	6	5	Requiere activación previa
+327	10	10	Disponible bajo petición
 328	2	8	Mantenimiento mensual
 329	9	1	Incluido en la tarifa
 330	2	3	Mantenimiento mensual
 331	10	7	Incluido en la tarifa
 332	9	3	Mantenimiento mensual
-333	8	1	Requiere activaci??n previa
-334	8	8	Disponible bajo petici??n
-335	7	8	Disponible bajo petici??n
-336	10	10	Disponible bajo petici??n
+333	8	1	Requiere activación previa
+334	8	8	Disponible bajo petición
+335	7	8	Disponible bajo petición
+336	10	10	Disponible bajo petición
 337	4	2	Mantenimiento mensual
 338	10	1	Incluido en la tarifa
-339	2	5	Disponible bajo petici??n
+339	2	5	Disponible bajo petición
 340	9	10	Incluido en la tarifa
-341	1	8	Disponible bajo petici??n
-342	7	10	Disponible bajo petici??n
+341	1	8	Disponible bajo petición
+342	7	10	Disponible bajo petición
 343	6	3	Incluido en la tarifa
-344	10	5	Requiere activaci??n previa
+344	10	5	Requiere activación previa
 345	8	9	Mantenimiento mensual
-346	8	8	Requiere activaci??n previa
-347	3	6	Requiere activaci??n previa
+346	8	8	Requiere activación previa
+347	3	6	Requiere activación previa
 348	7	8	Mantenimiento mensual
 349	7	1	Mantenimiento mensual
-350	4	7	Requiere activaci??n previa
-351	9	6	Requiere activaci??n previa
-352	10	4	Disponible bajo petici??n
-353	7	3	Requiere activaci??n previa
+350	4	7	Requiere activación previa
+351	9	6	Requiere activación previa
+352	10	4	Disponible bajo petición
+353	7	3	Requiere activación previa
 354	4	10	Mantenimiento mensual
-355	2	9	Requiere activaci??n previa
-356	6	6	Disponible bajo petici??n
-357	5	6	Requiere activaci??n previa
-358	10	4	Requiere activaci??n previa
-359	5	9	Requiere activaci??n previa
-360	4	10	Disponible bajo petici??n
+355	2	9	Requiere activación previa
+356	6	6	Disponible bajo petición
+357	5	6	Requiere activación previa
+358	10	4	Requiere activación previa
+359	5	9	Requiere activación previa
+360	4	10	Disponible bajo petición
 361	6	10	Mantenimiento mensual
 362	1	8	Incluido en la tarifa
 363	2	2	Incluido en la tarifa
-364	6	6	Requiere activaci??n previa
+364	6	6	Requiere activación previa
 365	5	9	Incluido en la tarifa
-366	1	7	Requiere activaci??n previa
+366	1	7	Requiere activación previa
 367	1	5	Mantenimiento mensual
 368	1	8	Incluido en la tarifa
 369	2	5	Mantenimiento mensual
-370	9	9	Disponible bajo petici??n
-371	1	3	Requiere activaci??n previa
+370	9	9	Disponible bajo petición
+371	1	3	Requiere activación previa
 372	6	6	Incluido en la tarifa
 373	7	8	Incluido en la tarifa
-374	3	1	Disponible bajo petici??n
+374	3	1	Disponible bajo petición
 375	6	9	Mantenimiento mensual
 376	10	5	Incluido en la tarifa
-377	2	8	Disponible bajo petici??n
-378	4	5	Disponible bajo petici??n
+377	2	8	Disponible bajo petición
+378	4	5	Disponible bajo petición
 379	9	7	Mantenimiento mensual
-380	5	7	Requiere activaci??n previa
+380	5	7	Requiere activación previa
 381	8	6	Mantenimiento mensual
 382	1	2	Incluido en la tarifa
 383	7	8	Mantenimiento mensual
 384	5	8	Mantenimiento mensual
 385	7	8	Incluido en la tarifa
-386	1	5	Disponible bajo petici??n
-387	1	4	Requiere activaci??n previa
+386	1	5	Disponible bajo petición
+387	1	4	Requiere activación previa
 388	8	5	Incluido en la tarifa
-389	5	10	Disponible bajo petici??n
+389	5	10	Disponible bajo petición
 390	5	1	Mantenimiento mensual
 391	5	5	Incluido en la tarifa
 392	7	5	Incluido en la tarifa
-393	10	4	Disponible bajo petici??n
-394	3	9	Disponible bajo petici??n
+393	10	4	Disponible bajo petición
+394	3	9	Disponible bajo petición
 395	3	5	Incluido en la tarifa
 396	5	7	Incluido en la tarifa
-397	7	2	Disponible bajo petici??n
+397	7	2	Disponible bajo petición
 398	8	3	Incluido en la tarifa
-399	7	1	Requiere activaci??n previa
-400	5	3	Requiere activaci??n previa
+399	7	1	Requiere activación previa
+400	5	3	Requiere activación previa
 401	6	5	Incluido en la tarifa
 402	7	3	Mantenimiento mensual
 403	8	1	Incluido en la tarifa
-404	4	5	Requiere activaci??n previa
+404	4	5	Requiere activación previa
 405	10	8	Incluido en la tarifa
-406	2	4	Disponible bajo petici??n
-407	8	1	Requiere activaci??n previa
+406	2	4	Disponible bajo petición
+407	8	1	Requiere activación previa
 408	1	1	Incluido en la tarifa
-409	9	4	Requiere activaci??n previa
-410	10	4	Disponible bajo petici??n
-411	4	9	Disponible bajo petici??n
-412	3	10	Disponible bajo petici??n
-413	6	3	Disponible bajo petici??n
-414	6	6	Disponible bajo petici??n
-415	6	4	Requiere activaci??n previa
-416	5	5	Requiere activaci??n previa
+409	9	4	Requiere activación previa
+410	10	4	Disponible bajo petición
+411	4	9	Disponible bajo petición
+412	3	10	Disponible bajo petición
+413	6	3	Disponible bajo petición
+414	6	6	Disponible bajo petición
+415	6	4	Requiere activación previa
+416	5	5	Requiere activación previa
 417	10	10	Mantenimiento mensual
-418	7	9	Requiere activaci??n previa
-419	8	7	Requiere activaci??n previa
+418	7	9	Requiere activación previa
+419	8	7	Requiere activación previa
 420	5	5	Incluido en la tarifa
-421	8	5	Requiere activaci??n previa
+421	8	5	Requiere activación previa
 422	1	2	Mantenimiento mensual
 423	6	3	Incluido en la tarifa
-424	6	5	Requiere activaci??n previa
+424	6	5	Requiere activación previa
 425	1	2	Mantenimiento mensual
-426	4	1	Disponible bajo petici??n
+426	4	1	Disponible bajo petición
 427	7	3	Incluido en la tarifa
-428	1	5	Disponible bajo petici??n
+428	1	5	Disponible bajo petición
 429	10	1	Mantenimiento mensual
-430	6	1	Requiere activaci??n previa
+430	6	1	Requiere activación previa
 431	2	8	Incluido en la tarifa
-432	5	8	Requiere activaci??n previa
+432	5	8	Requiere activación previa
 433	4	10	Mantenimiento mensual
-434	9	1	Requiere activaci??n previa
+434	9	1	Requiere activación previa
 435	7	8	Mantenimiento mensual
-436	7	3	Disponible bajo petici??n
+436	7	3	Disponible bajo petición
 437	10	8	Incluido en la tarifa
-438	7	10	Disponible bajo petici??n
+438	7	10	Disponible bajo petición
 439	7	4	Incluido en la tarifa
 440	1	3	Mantenimiento mensual
-441	4	1	Disponible bajo petici??n
-442	7	7	Disponible bajo petici??n
-443	3	2	Requiere activaci??n previa
-444	3	7	Requiere activaci??n previa
+441	4	1	Disponible bajo petición
+442	7	7	Disponible bajo petición
+443	3	2	Requiere activación previa
+444	3	7	Requiere activación previa
 445	9	4	Mantenimiento mensual
-446	9	2	Requiere activaci??n previa
+446	9	2	Requiere activación previa
 447	9	2	Incluido en la tarifa
-448	5	8	Disponible bajo petici??n
+448	5	8	Disponible bajo petición
 449	2	10	Mantenimiento mensual
-450	8	6	Requiere activaci??n previa
+450	8	6	Requiere activación previa
 451	8	2	Mantenimiento mensual
-452	4	4	Requiere activaci??n previa
-453	8	5	Requiere activaci??n previa
-454	7	6	Requiere activaci??n previa
-455	6	6	Requiere activaci??n previa
+452	4	4	Requiere activación previa
+453	8	5	Requiere activación previa
+454	7	6	Requiere activación previa
+455	6	6	Requiere activación previa
 456	4	10	Incluido en la tarifa
 457	3	2	Incluido en la tarifa
-458	2	4	Requiere activaci??n previa
+458	2	4	Requiere activación previa
 459	1	2	Mantenimiento mensual
 460	5	2	Incluido en la tarifa
-461	1	8	Requiere activaci??n previa
-462	5	4	Requiere activaci??n previa
-463	1	7	Requiere activaci??n previa
+461	1	8	Requiere activación previa
+462	5	4	Requiere activación previa
+463	1	7	Requiere activación previa
 464	1	8	Incluido en la tarifa
-465	9	4	Disponible bajo petici??n
+465	9	4	Disponible bajo petición
 466	5	3	Incluido en la tarifa
 467	7	7	Mantenimiento mensual
 468	6	10	Incluido en la tarifa
 469	4	10	Mantenimiento mensual
-470	5	8	Disponible bajo petici??n
-471	10	7	Disponible bajo petici??n
+470	5	8	Disponible bajo petición
+471	10	7	Disponible bajo petición
 472	5	3	Incluido en la tarifa
 473	5	1	Mantenimiento mensual
 474	6	8	Mantenimiento mensual
 475	1	9	Mantenimiento mensual
 476	7	3	Incluido en la tarifa
 477	9	6	Mantenimiento mensual
-478	3	5	Disponible bajo petici??n
+478	3	5	Disponible bajo petición
 479	7	1	Incluido en la tarifa
-480	3	2	Requiere activaci??n previa
+480	3	2	Requiere activación previa
 481	3	1	Incluido en la tarifa
 482	3	10	Mantenimiento mensual
-483	8	8	Requiere activaci??n previa
-484	6	9	Disponible bajo petici??n
+483	8	8	Requiere activación previa
+484	6	9	Disponible bajo petición
 485	8	2	Incluido en la tarifa
-486	3	7	Requiere activaci??n previa
-487	1	1	Disponible bajo petici??n
+486	3	7	Requiere activación previa
+487	1	1	Disponible bajo petición
 488	7	9	Mantenimiento mensual
-489	9	3	Disponible bajo petici??n
+489	9	3	Disponible bajo petición
 490	9	7	Incluido en la tarifa
 491	7	1	Mantenimiento mensual
 492	1	1	Incluido en la tarifa
 493	9	9	Incluido en la tarifa
-494	7	10	Disponible bajo petici??n
-495	9	2	Disponible bajo petici??n
-496	1	10	Requiere activaci??n previa
+494	7	10	Disponible bajo petición
+495	9	2	Disponible bajo petición
+496	1	10	Requiere activación previa
 497	9	8	Mantenimiento mensual
 498	3	7	Incluido en la tarifa
 499	4	7	Incluido en la tarifa
 500	8	3	Mantenimiento mensual
 501	10	5	Mantenimiento mensual
 502	10	6	Mantenimiento mensual
-503	5	7	Disponible bajo petici??n
-504	5	3	Disponible bajo petici??n
-505	2	2	Requiere activaci??n previa
+503	5	7	Disponible bajo petición
+504	5	3	Disponible bajo petición
+505	2	2	Requiere activación previa
 506	1	8	Mantenimiento mensual
-507	1	4	Disponible bajo petici??n
+507	1	4	Disponible bajo petición
 508	8	1	Incluido en la tarifa
-509	4	2	Disponible bajo petici??n
-510	10	8	Disponible bajo petici??n
-511	2	10	Requiere activaci??n previa
-512	10	9	Disponible bajo petici??n
-513	1	8	Disponible bajo petici??n
+509	4	2	Disponible bajo petición
+510	10	8	Disponible bajo petición
+511	2	10	Requiere activación previa
+512	10	9	Disponible bajo petición
+513	1	8	Disponible bajo petición
 514	7	2	Mantenimiento mensual
 515	6	2	Mantenimiento mensual
 516	9	2	Incluido en la tarifa
 517	9	2	Incluido en la tarifa
-518	1	9	Requiere activaci??n previa
-519	3	2	Disponible bajo petici??n
+518	1	9	Requiere activación previa
+519	3	2	Disponible bajo petición
 520	2	5	Mantenimiento mensual
 521	4	9	Mantenimiento mensual
 522	7	5	Incluido en la tarifa
@@ -2485,110 +2485,110 @@ COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitaci
 525	6	8	Incluido en la tarifa
 526	1	8	Incluido en la tarifa
 527	4	7	Mantenimiento mensual
-528	5	3	Requiere activaci??n previa
+528	5	3	Requiere activación previa
 529	10	8	Mantenimiento mensual
 530	9	6	Incluido en la tarifa
-531	2	2	Requiere activaci??n previa
-532	6	3	Requiere activaci??n previa
-533	1	7	Requiere activaci??n previa
+531	2	2	Requiere activación previa
+532	6	3	Requiere activación previa
+533	1	7	Requiere activación previa
 534	8	2	Mantenimiento mensual
-535	4	10	Requiere activaci??n previa
-536	10	4	Requiere activaci??n previa
+535	4	10	Requiere activación previa
+536	10	4	Requiere activación previa
 537	10	2	Incluido en la tarifa
 538	8	8	Incluido en la tarifa
-539	3	6	Disponible bajo petici??n
-540	3	8	Requiere activaci??n previa
-541	8	1	Requiere activaci??n previa
+539	3	6	Disponible bajo petición
+540	3	8	Requiere activación previa
+541	8	1	Requiere activación previa
 542	10	2	Mantenimiento mensual
 543	8	1	Mantenimiento mensual
-544	1	5	Disponible bajo petici??n
-545	4	8	Requiere activaci??n previa
+544	1	5	Disponible bajo petición
+545	4	8	Requiere activación previa
 546	3	6	Incluido en la tarifa
-547	2	3	Disponible bajo petici??n
-548	1	7	Disponible bajo petici??n
+547	2	3	Disponible bajo petición
+548	1	7	Disponible bajo petición
 549	1	8	Incluido en la tarifa
-550	10	8	Requiere activaci??n previa
+550	10	8	Requiere activación previa
 551	6	3	Incluido en la tarifa
-552	5	3	Disponible bajo petici??n
+552	5	3	Disponible bajo petición
 553	1	10	Incluido en la tarifa
 554	8	3	Incluido en la tarifa
 555	10	10	Incluido en la tarifa
 556	5	4	Mantenimiento mensual
-557	9	9	Disponible bajo petici??n
+557	9	9	Disponible bajo petición
 558	4	7	Incluido en la tarifa
 559	4	4	Mantenimiento mensual
 560	4	9	Mantenimiento mensual
-561	1	3	Disponible bajo petici??n
-562	7	6	Disponible bajo petici??n
-563	1	7	Disponible bajo petici??n
-564	2	4	Requiere activaci??n previa
-565	7	9	Disponible bajo petici??n
-566	6	9	Disponible bajo petici??n
-567	5	8	Requiere activaci??n previa
+561	1	3	Disponible bajo petición
+562	7	6	Disponible bajo petición
+563	1	7	Disponible bajo petición
+564	2	4	Requiere activación previa
+565	7	9	Disponible bajo petición
+566	6	9	Disponible bajo petición
+567	5	8	Requiere activación previa
 568	6	1	Incluido en la tarifa
-569	2	8	Requiere activaci??n previa
-570	5	1	Disponible bajo petici??n
+569	2	8	Requiere activación previa
+570	5	1	Disponible bajo petición
 571	9	10	Mantenimiento mensual
-572	8	7	Disponible bajo petici??n
-573	2	8	Disponible bajo petici??n
-574	7	6	Requiere activaci??n previa
-575	6	7	Requiere activaci??n previa
+572	8	7	Disponible bajo petición
+573	2	8	Disponible bajo petición
+574	7	6	Requiere activación previa
+575	6	7	Requiere activación previa
 576	10	6	Mantenimiento mensual
-577	7	9	Requiere activaci??n previa
+577	7	9	Requiere activación previa
 578	2	3	Mantenimiento mensual
-579	2	2	Disponible bajo petici??n
+579	2	2	Disponible bajo petición
 580	1	1	Mantenimiento mensual
 581	1	9	Mantenimiento mensual
-582	9	4	Requiere activaci??n previa
+582	9	4	Requiere activación previa
 583	2	3	Mantenimiento mensual
 584	3	7	Incluido en la tarifa
 585	8	9	Mantenimiento mensual
-586	10	3	Disponible bajo petici??n
+586	10	3	Disponible bajo petición
 587	3	7	Mantenimiento mensual
 588	1	3	Incluido en la tarifa
 589	6	9	Mantenimiento mensual
 590	2	10	Mantenimiento mensual
 591	10	3	Incluido en la tarifa
-592	9	3	Requiere activaci??n previa
-593	9	5	Requiere activaci??n previa
-594	2	5	Requiere activaci??n previa
+592	9	3	Requiere activación previa
+593	9	5	Requiere activación previa
+594	2	5	Requiere activación previa
 595	4	10	Mantenimiento mensual
 596	1	10	Mantenimiento mensual
 597	2	6	Mantenimiento mensual
-598	6	3	Disponible bajo petici??n
-599	4	2	Disponible bajo petici??n
+598	6	3	Disponible bajo petición
+599	4	2	Disponible bajo petición
 600	6	2	Incluido en la tarifa
-601	5	1	Disponible bajo petici??n
-602	3	2	Disponible bajo petici??n
-603	2	1	Disponible bajo petici??n
+601	5	1	Disponible bajo petición
+602	3	2	Disponible bajo petición
+603	2	1	Disponible bajo petición
 604	1	10	Incluido en la tarifa
 605	4	7	Incluido en la tarifa
 606	8	6	Incluido en la tarifa
-607	2	9	Disponible bajo petici??n
-608	2	10	Requiere activaci??n previa
-609	6	2	Requiere activaci??n previa
+607	2	9	Disponible bajo petición
+608	2	10	Requiere activación previa
+609	6	2	Requiere activación previa
 610	8	3	Mantenimiento mensual
 611	3	8	Mantenimiento mensual
 612	4	3	Mantenimiento mensual
-613	10	9	Disponible bajo petici??n
+613	10	9	Disponible bajo petición
 614	5	2	Mantenimiento mensual
-615	3	5	Requiere activaci??n previa
-616	3	10	Requiere activaci??n previa
+615	3	5	Requiere activación previa
+616	3	10	Requiere activación previa
 617	9	10	Incluido en la tarifa
 618	8	3	Mantenimiento mensual
 619	3	3	Mantenimiento mensual
 620	8	6	Mantenimiento mensual
-621	1	8	Requiere activaci??n previa
+621	1	8	Requiere activación previa
 622	9	1	Mantenimiento mensual
 623	2	6	Incluido en la tarifa
 624	3	1	Incluido en la tarifa
 625	8	1	Mantenimiento mensual
-626	8	3	Disponible bajo petici??n
-627	6	7	Requiere activaci??n previa
+626	8	3	Disponible bajo petición
+627	6	7	Requiere activación previa
 628	10	7	Incluido en la tarifa
 629	4	9	Incluido en la tarifa
 630	8	6	Incluido en la tarifa
-631	6	10	Disponible bajo petici??n
+631	6	10	Disponible bajo petición
 632	5	5	Mantenimiento mensual
 633	5	9	Incluido en la tarifa
 634	7	2	Mantenimiento mensual
@@ -2598,270 +2598,270 @@ COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitaci
 638	10	4	Mantenimiento mensual
 639	7	6	Incluido en la tarifa
 640	4	6	Incluido en la tarifa
-641	9	4	Requiere activaci??n previa
+641	9	4	Requiere activación previa
 642	6	1	Incluido en la tarifa
-643	4	6	Requiere activaci??n previa
-644	9	3	Requiere activaci??n previa
+643	4	6	Requiere activación previa
+644	9	3	Requiere activación previa
 645	4	10	Mantenimiento mensual
 646	10	6	Mantenimiento mensual
-647	6	6	Disponible bajo petici??n
-648	5	5	Disponible bajo petici??n
-649	10	1	Disponible bajo petici??n
-650	8	7	Requiere activaci??n previa
+647	6	6	Disponible bajo petición
+648	5	5	Disponible bajo petición
+649	10	1	Disponible bajo petición
+650	8	7	Requiere activación previa
 651	4	10	Mantenimiento mensual
-652	3	2	Disponible bajo petici??n
+652	3	2	Disponible bajo petición
 653	1	5	Incluido en la tarifa
-654	1	2	Requiere activaci??n previa
-655	5	2	Requiere activaci??n previa
-656	9	9	Requiere activaci??n previa
+654	1	2	Requiere activación previa
+655	5	2	Requiere activación previa
+656	9	9	Requiere activación previa
 657	3	4	Mantenimiento mensual
 658	5	9	Mantenimiento mensual
 659	2	2	Mantenimiento mensual
-660	4	10	Disponible bajo petici??n
+660	4	10	Disponible bajo petición
 661	3	2	Incluido en la tarifa
-662	2	1	Requiere activaci??n previa
-663	10	8	Requiere activaci??n previa
-664	4	9	Disponible bajo petici??n
-665	7	8	Requiere activaci??n previa
+662	2	1	Requiere activación previa
+663	10	8	Requiere activación previa
+664	4	9	Disponible bajo petición
+665	7	8	Requiere activación previa
 666	10	1	Incluido en la tarifa
 667	2	3	Incluido en la tarifa
-668	5	1	Disponible bajo petici??n
-669	7	10	Requiere activaci??n previa
+668	5	1	Disponible bajo petición
+669	7	10	Requiere activación previa
 670	4	8	Incluido en la tarifa
-671	8	10	Requiere activaci??n previa
-672	8	6	Disponible bajo petici??n
+671	8	10	Requiere activación previa
+672	8	6	Disponible bajo petición
 673	8	1	Mantenimiento mensual
 674	6	7	Mantenimiento mensual
-675	4	6	Disponible bajo petici??n
+675	4	6	Disponible bajo petición
 676	5	3	Incluido en la tarifa
 677	7	2	Incluido en la tarifa
-678	1	10	Disponible bajo petici??n
-679	5	10	Requiere activaci??n previa
+678	1	10	Disponible bajo petición
+679	5	10	Requiere activación previa
 680	1	10	Incluido en la tarifa
-681	9	4	Disponible bajo petici??n
-682	8	4	Disponible bajo petici??n
+681	9	4	Disponible bajo petición
+682	8	4	Disponible bajo petición
 683	3	10	Incluido en la tarifa
-684	10	3	Requiere activaci??n previa
+684	10	3	Requiere activación previa
 685	2	4	Mantenimiento mensual
 686	6	4	Mantenimiento mensual
 687	6	9	Incluido en la tarifa
 688	6	2	Incluido en la tarifa
-689	2	4	Requiere activaci??n previa
+689	2	4	Requiere activación previa
 690	5	4	Incluido en la tarifa
 691	6	3	Mantenimiento mensual
 692	6	3	Incluido en la tarifa
 693	1	5	Mantenimiento mensual
 694	5	10	Incluido en la tarifa
 695	9	5	Mantenimiento mensual
-696	9	9	Requiere activaci??n previa
+696	9	9	Requiere activación previa
 697	6	5	Mantenimiento mensual
-698	6	6	Disponible bajo petici??n
-699	6	9	Disponible bajo petici??n
-700	1	1	Disponible bajo petici??n
+698	6	6	Disponible bajo petición
+699	6	9	Disponible bajo petición
+700	1	1	Disponible bajo petición
 701	7	6	Incluido en la tarifa
-702	2	1	Requiere activaci??n previa
-703	5	3	Requiere activaci??n previa
+702	2	1	Requiere activación previa
+703	5	3	Requiere activación previa
 704	9	10	Incluido en la tarifa
-705	4	1	Requiere activaci??n previa
-706	10	3	Requiere activaci??n previa
-707	1	6	Requiere activaci??n previa
-708	6	2	Requiere activaci??n previa
-709	8	1	Requiere activaci??n previa
-710	7	2	Requiere activaci??n previa
-711	7	3	Requiere activaci??n previa
-712	6	9	Requiere activaci??n previa
+705	4	1	Requiere activación previa
+706	10	3	Requiere activación previa
+707	1	6	Requiere activación previa
+708	6	2	Requiere activación previa
+709	8	1	Requiere activación previa
+710	7	2	Requiere activación previa
+711	7	3	Requiere activación previa
+712	6	9	Requiere activación previa
 713	4	8	Incluido en la tarifa
 714	8	7	Mantenimiento mensual
-715	4	7	Disponible bajo petici??n
+715	4	7	Disponible bajo petición
 716	8	3	Incluido en la tarifa
 717	8	8	Mantenimiento mensual
 718	1	1	Incluido en la tarifa
-719	3	2	Requiere activaci??n previa
+719	3	2	Requiere activación previa
 720	1	5	Incluido en la tarifa
-721	9	10	Requiere activaci??n previa
+721	9	10	Requiere activación previa
 722	1	2	Mantenimiento mensual
-723	6	6	Requiere activaci??n previa
-724	9	10	Requiere activaci??n previa
+723	6	6	Requiere activación previa
+724	9	10	Requiere activación previa
 725	1	7	Incluido en la tarifa
 726	4	7	Incluido en la tarifa
-727	7	1	Disponible bajo petici??n
+727	7	1	Disponible bajo petición
 728	2	9	Incluido en la tarifa
-729	7	7	Requiere activaci??n previa
-730	3	10	Disponible bajo petici??n
+729	7	7	Requiere activación previa
+730	3	10	Disponible bajo petición
 731	2	3	Mantenimiento mensual
 732	7	2	Mantenimiento mensual
 733	10	2	Mantenimiento mensual
 734	8	8	Incluido en la tarifa
-735	1	7	Requiere activaci??n previa
-736	10	1	Disponible bajo petici??n
+735	1	7	Requiere activación previa
+736	10	1	Disponible bajo petición
 737	10	9	Incluido en la tarifa
 738	10	7	Incluido en la tarifa
 739	1	5	Incluido en la tarifa
 740	2	1	Mantenimiento mensual
-741	3	1	Disponible bajo petici??n
-742	10	7	Disponible bajo petici??n
-743	10	6	Requiere activaci??n previa
+741	3	1	Disponible bajo petición
+742	10	7	Disponible bajo petición
+743	10	6	Requiere activación previa
 744	1	7	Incluido en la tarifa
-745	3	1	Requiere activaci??n previa
+745	3	1	Requiere activación previa
 746	8	2	Mantenimiento mensual
 747	8	8	Mantenimiento mensual
-748	2	9	Disponible bajo petici??n
-749	9	8	Requiere activaci??n previa
-750	3	7	Requiere activaci??n previa
+748	2	9	Disponible bajo petición
+749	9	8	Requiere activación previa
+750	3	7	Requiere activación previa
 751	10	3	Incluido en la tarifa
-752	1	10	Requiere activaci??n previa
+752	1	10	Requiere activación previa
 753	8	8	Incluido en la tarifa
 754	9	2	Mantenimiento mensual
 755	1	10	Incluido en la tarifa
-756	7	10	Disponible bajo petici??n
-757	9	4	Requiere activaci??n previa
-758	3	5	Disponible bajo petici??n
-759	10	2	Requiere activaci??n previa
-760	6	2	Requiere activaci??n previa
-761	10	4	Requiere activaci??n previa
-762	2	1	Requiere activaci??n previa
+756	7	10	Disponible bajo petición
+757	9	4	Requiere activación previa
+758	3	5	Disponible bajo petición
+759	10	2	Requiere activación previa
+760	6	2	Requiere activación previa
+761	10	4	Requiere activación previa
+762	2	1	Requiere activación previa
 763	2	3	Incluido en la tarifa
-764	4	1	Requiere activaci??n previa
+764	4	1	Requiere activación previa
 765	4	3	Incluido en la tarifa
 766	4	8	Mantenimiento mensual
 767	10	6	Mantenimiento mensual
-768	4	4	Requiere activaci??n previa
+768	4	4	Requiere activación previa
 769	10	3	Mantenimiento mensual
 770	6	5	Incluido en la tarifa
-771	7	3	Requiere activaci??n previa
-772	7	10	Requiere activaci??n previa
+771	7	3	Requiere activación previa
+772	7	10	Requiere activación previa
 773	7	4	Incluido en la tarifa
-774	2	2	Requiere activaci??n previa
+774	2	2	Requiere activación previa
 775	8	1	Incluido en la tarifa
-776	2	7	Requiere activaci??n previa
-777	5	5	Requiere activaci??n previa
+776	2	7	Requiere activación previa
+777	5	5	Requiere activación previa
 778	10	7	Mantenimiento mensual
-779	6	10	Requiere activaci??n previa
-780	7	6	Requiere activaci??n previa
-781	3	9	Requiere activaci??n previa
+779	6	10	Requiere activación previa
+780	7	6	Requiere activación previa
+781	3	9	Requiere activación previa
 782	9	2	Incluido en la tarifa
-783	2	3	Disponible bajo petici??n
+783	2	3	Disponible bajo petición
 784	1	5	Incluido en la tarifa
-785	9	10	Disponible bajo petici??n
+785	9	10	Disponible bajo petición
 786	10	8	Mantenimiento mensual
-787	7	6	Requiere activaci??n previa
+787	7	6	Requiere activación previa
 788	5	5	Incluido en la tarifa
-789	1	6	Requiere activaci??n previa
-790	4	6	Disponible bajo petici??n
-791	6	5	Requiere activaci??n previa
+789	1	6	Requiere activación previa
+790	4	6	Disponible bajo petición
+791	6	5	Requiere activación previa
 792	2	4	Incluido en la tarifa
 793	8	9	Incluido en la tarifa
-794	6	2	Disponible bajo petici??n
-795	6	7	Disponible bajo petici??n
+794	6	2	Disponible bajo petición
+795	6	7	Disponible bajo petición
 796	1	4	Incluido en la tarifa
-797	3	10	Requiere activaci??n previa
-798	9	4	Disponible bajo petici??n
-799	4	9	Requiere activaci??n previa
+797	3	10	Requiere activación previa
+798	9	4	Disponible bajo petición
+799	4	9	Requiere activación previa
 800	9	2	Incluido en la tarifa
 801	5	2	Incluido en la tarifa
 802	5	3	Incluido en la tarifa
-803	10	6	Requiere activaci??n previa
-804	7	10	Requiere activaci??n previa
+803	10	6	Requiere activación previa
+804	7	10	Requiere activación previa
 805	1	3	Mantenimiento mensual
-806	10	5	Disponible bajo petici??n
-807	1	2	Disponible bajo petici??n
-808	8	7	Disponible bajo petici??n
-809	9	1	Requiere activaci??n previa
+806	10	5	Disponible bajo petición
+807	1	2	Disponible bajo petición
+808	8	7	Disponible bajo petición
+809	9	1	Requiere activación previa
 810	10	4	Incluido en la tarifa
 811	4	1	Mantenimiento mensual
 812	5	9	Mantenimiento mensual
 813	10	9	Mantenimiento mensual
-814	2	2	Requiere activaci??n previa
+814	2	2	Requiere activación previa
 815	8	9	Incluido en la tarifa
-816	5	2	Disponible bajo petici??n
+816	5	2	Disponible bajo petición
 817	6	9	Mantenimiento mensual
 818	4	3	Mantenimiento mensual
-819	5	3	Requiere activaci??n previa
-820	8	10	Requiere activaci??n previa
-821	2	9	Disponible bajo petici??n
+819	5	3	Requiere activación previa
+820	8	10	Requiere activación previa
+821	2	9	Disponible bajo petición
 822	9	8	Mantenimiento mensual
-823	1	5	Disponible bajo petici??n
+823	1	5	Disponible bajo petición
 824	5	1	Incluido en la tarifa
 825	9	10	Mantenimiento mensual
-826	7	3	Requiere activaci??n previa
-827	7	6	Disponible bajo petici??n
-828	4	1	Requiere activaci??n previa
+826	7	3	Requiere activación previa
+827	7	6	Disponible bajo petición
+828	4	1	Requiere activación previa
 829	3	2	Mantenimiento mensual
-830	3	10	Disponible bajo petici??n
+830	3	10	Disponible bajo petición
 831	10	1	Incluido en la tarifa
 832	8	1	Mantenimiento mensual
-833	3	7	Disponible bajo petici??n
+833	3	7	Disponible bajo petición
 834	8	6	Incluido en la tarifa
 835	3	5	Mantenimiento mensual
-836	3	6	Requiere activaci??n previa
-837	8	2	Requiere activaci??n previa
-838	3	9	Disponible bajo petici??n
-839	5	4	Requiere activaci??n previa
+836	3	6	Requiere activación previa
+837	8	2	Requiere activación previa
+838	3	9	Disponible bajo petición
+839	5	4	Requiere activación previa
 840	1	4	Mantenimiento mensual
-841	10	4	Disponible bajo petici??n
-842	2	1	Requiere activaci??n previa
-843	2	7	Disponible bajo petici??n
-844	10	1	Requiere activaci??n previa
-845	10	3	Requiere activaci??n previa
+841	10	4	Disponible bajo petición
+842	2	1	Requiere activación previa
+843	2	7	Disponible bajo petición
+844	10	1	Requiere activación previa
+845	10	3	Requiere activación previa
 846	2	1	Incluido en la tarifa
 847	6	10	Incluido en la tarifa
 848	1	8	Incluido en la tarifa
-849	2	7	Disponible bajo petici??n
+849	2	7	Disponible bajo petición
 850	10	2	Mantenimiento mensual
-851	8	3	Requiere activaci??n previa
-852	10	1	Disponible bajo petici??n
+851	8	3	Requiere activación previa
+852	10	1	Disponible bajo petición
 853	6	10	Incluido en la tarifa
-854	2	6	Requiere activaci??n previa
+854	2	6	Requiere activación previa
 855	3	8	Incluido en la tarifa
 856	3	3	Incluido en la tarifa
 857	6	6	Mantenimiento mensual
 858	2	8	Mantenimiento mensual
-859	7	9	Disponible bajo petici??n
+859	7	9	Disponible bajo petición
 860	1	10	Mantenimiento mensual
-861	2	3	Disponible bajo petici??n
-862	8	2	Requiere activaci??n previa
+861	2	3	Disponible bajo petición
+862	8	2	Requiere activación previa
 863	9	8	Incluido en la tarifa
-864	2	2	Disponible bajo petici??n
+864	2	2	Disponible bajo petición
 865	2	10	Mantenimiento mensual
-866	5	3	Requiere activaci??n previa
+866	5	3	Requiere activación previa
 867	10	1	Mantenimiento mensual
-868	2	6	Disponible bajo petici??n
+868	2	6	Disponible bajo petición
 869	9	6	Incluido en la tarifa
 870	6	2	Mantenimiento mensual
 871	6	9	Incluido en la tarifa
 872	2	3	Mantenimiento mensual
-873	8	8	Disponible bajo petici??n
-874	6	3	Requiere activaci??n previa
+873	8	8	Disponible bajo petición
+874	6	3	Requiere activación previa
 875	5	3	Incluido en la tarifa
-876	1	5	Requiere activaci??n previa
+876	1	5	Requiere activación previa
 877	2	3	Incluido en la tarifa
-878	3	7	Requiere activaci??n previa
-879	7	10	Disponible bajo petici??n
+878	3	7	Requiere activación previa
+879	7	10	Disponible bajo petición
 880	4	4	Mantenimiento mensual
-881	2	1	Disponible bajo petici??n
-882	5	2	Requiere activaci??n previa
-883	10	2	Disponible bajo petici??n
+881	2	1	Disponible bajo petición
+882	5	2	Requiere activación previa
+883	10	2	Disponible bajo petición
 884	3	5	Mantenimiento mensual
-885	7	1	Disponible bajo petici??n
-886	5	4	Requiere activaci??n previa
-887	2	8	Disponible bajo petici??n
-888	7	8	Disponible bajo petici??n
+885	7	1	Disponible bajo petición
+886	5	4	Requiere activación previa
+887	2	8	Disponible bajo petición
+888	7	8	Disponible bajo petición
 889	7	2	Mantenimiento mensual
-890	6	10	Disponible bajo petici??n
+890	6	10	Disponible bajo petición
 891	9	3	Mantenimiento mensual
-892	10	8	Disponible bajo petici??n
+892	10	8	Disponible bajo petición
 893	1	3	Incluido en la tarifa
-894	4	2	Requiere activaci??n previa
-895	10	5	Requiere activaci??n previa
-896	4	10	Disponible bajo petici??n
-897	9	1	Requiere activaci??n previa
+894	4	2	Requiere activación previa
+895	10	5	Requiere activación previa
+896	4	10	Disponible bajo petición
+897	9	1	Requiere activación previa
 898	4	8	Mantenimiento mensual
-899	5	8	Disponible bajo petici??n
-900	10	9	Disponible bajo petici??n
+899	5	8	Disponible bajo petición
+900	10	9	Disponible bajo petición
 901	1	9	Incluido en la tarifa
 902	1	8	Mantenimiento mensual
 903	2	6	Mantenimiento mensual
-904	6	5	Requiere activaci??n previa
+904	6	5	Requiere activación previa
 905	7	5	Mantenimiento mensual
 906	9	10	Incluido en la tarifa
 907	3	3	Mantenimiento mensual
@@ -2872,67 +2872,67 @@ COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitaci
 912	6	4	Incluido en la tarifa
 913	8	6	Incluido en la tarifa
 914	10	3	Mantenimiento mensual
-915	4	6	Requiere activaci??n previa
-916	5	7	Requiere activaci??n previa
-917	2	6	Disponible bajo petici??n
-918	5	5	Requiere activaci??n previa
-919	4	7	Requiere activaci??n previa
-920	4	9	Disponible bajo petici??n
-921	2	3	Requiere activaci??n previa
+915	4	6	Requiere activación previa
+916	5	7	Requiere activación previa
+917	2	6	Disponible bajo petición
+918	5	5	Requiere activación previa
+919	4	7	Requiere activación previa
+920	4	9	Disponible bajo petición
+921	2	3	Requiere activación previa
 922	9	6	Mantenimiento mensual
-923	10	9	Disponible bajo petici??n
-924	6	7	Disponible bajo petici??n
+923	10	9	Disponible bajo petición
+924	6	7	Disponible bajo petición
 925	4	8	Mantenimiento mensual
-926	5	4	Requiere activaci??n previa
+926	5	4	Requiere activación previa
 927	1	2	Mantenimiento mensual
 928	1	2	Mantenimiento mensual
 929	9	9	Mantenimiento mensual
 930	9	1	Incluido en la tarifa
 931	5	1	Mantenimiento mensual
-932	8	7	Requiere activaci??n previa
-933	4	3	Requiere activaci??n previa
+932	8	7	Requiere activación previa
+933	4	3	Requiere activación previa
 934	7	9	Incluido en la tarifa
-935	4	10	Disponible bajo petici??n
+935	4	10	Disponible bajo petición
 936	3	8	Mantenimiento mensual
-937	6	8	Disponible bajo petici??n
+937	6	8	Disponible bajo petición
 938	2	10	Incluido en la tarifa
 939	4	5	Incluido en la tarifa
 940	6	1	Mantenimiento mensual
-941	5	2	Disponible bajo petici??n
-942	4	5	Disponible bajo petici??n
+941	5	2	Disponible bajo petición
+942	4	5	Disponible bajo petición
 943	8	9	Mantenimiento mensual
 944	1	4	Mantenimiento mensual
-945	8	5	Requiere activaci??n previa
+945	8	5	Requiere activación previa
 946	2	7	Incluido en la tarifa
 947	4	1	Mantenimiento mensual
 948	2	3	Incluido en la tarifa
 949	6	9	Mantenimiento mensual
 950	4	1	Incluido en la tarifa
-951	9	3	Requiere activaci??n previa
+951	9	3	Requiere activación previa
 952	6	4	Incluido en la tarifa
-953	10	1	Disponible bajo petici??n
+953	10	1	Disponible bajo petición
 954	3	2	Mantenimiento mensual
-955	1	1	Disponible bajo petici??n
-956	6	7	Disponible bajo petici??n
+955	1	1	Disponible bajo petición
+956	6	7	Disponible bajo petición
 957	10	2	Mantenimiento mensual
-958	5	9	Requiere activaci??n previa
-959	6	8	Disponible bajo petici??n
-960	8	10	Disponible bajo petici??n
+958	5	9	Requiere activación previa
+959	6	8	Disponible bajo petición
+960	8	10	Disponible bajo petición
 961	8	2	Incluido en la tarifa
 962	7	5	Mantenimiento mensual
 963	10	4	Incluido en la tarifa
-964	3	8	Disponible bajo petici??n
+964	3	8	Disponible bajo petición
 965	5	3	Incluido en la tarifa
 966	10	7	Mantenimiento mensual
 967	3	2	Mantenimiento mensual
 968	1	8	Incluido en la tarifa
 969	3	7	Mantenimiento mensual
-970	2	1	Requiere activaci??n previa
-971	5	2	Disponible bajo petici??n
+970	2	1	Requiere activación previa
+971	5	2	Disponible bajo petición
 972	1	5	Mantenimiento mensual
-973	8	4	Disponible bajo petici??n
+973	8	4	Disponible bajo petición
 974	7	7	Incluido en la tarifa
-975	6	10	Disponible bajo petici??n
+975	6	10	Disponible bajo petición
 976	8	8	Mantenimiento mensual
 \.
 
@@ -4142,278 +4142,278 @@ COPY public.descuento (id_descuento, porcentaje_descuento, cant_dia_hospedado) F
 --
 
 COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_habitacion, id_descuento, id_aumento_costo, concepto, precio_unitario, cantidad, subtotal, monto_descuento, monto_aumento, precio_total) FROM stdin;
-1	1	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	1	116.86	0.00	0.00	116.86
-2	2	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-3	3	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
-4	4	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-5	5	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
-6	6	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-7	7	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
-8	8	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-9	9	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	2	233.72	0.00	0.00	233.72
-10	10	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
-11	11	\N	282	\N	\N	Estad├¡a de habitaci├│n	748.15	10	7481.50	0.00	0.00	7481.50
-12	12	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
-13	13	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
-14	14	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	2	233.72	0.00	0.00	233.72
-15	15	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
-16	16	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	1	116.86	0.00	0.00	116.86
-17	17	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
-18	18	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
-19	19	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-20	20	\N	151	\N	\N	Estad├¡a de habitaci├│n	110.54	14	1547.56	0.00	0.00	1547.56
-21	21	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
-22	22	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-23	23	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
-24	24	\N	13	\N	\N	Estad├¡a de habitaci├│n	646.25	5	3231.25	0.00	0.00	3231.25
-25	25	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
-26	26	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
-27	27	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	6	701.16	0.00	0.00	701.16
-28	28	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-29	29	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
-30	30	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
-31	31	\N	78	\N	\N	Estad├¡a de habitaci├│n	176.29	10	1762.90	0.00	0.00	1762.90
-32	32	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
-33	33	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
-34	34	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-35	35	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-36	36	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
-37	37	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-38	38	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
-39	39	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-40	40	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
-41	41	\N	49	\N	\N	Estad├¡a de habitaci├│n	451.40	12	5416.80	0.00	0.00	5416.80
-42	42	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
-43	43	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
-44	44	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
-45	45	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
-46	46	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-47	47	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
-48	48	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-49	49	\N	17	\N	\N	Estad├¡a de habitaci├│n	439.08	2	878.16	0.00	0.00	878.16
-50	50	\N	260	\N	\N	Estad├¡a de habitaci├│n	431.26	9	3881.34	0.00	0.00	3881.34
-51	51	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
-52	52	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
-53	53	\N	120	\N	\N	Estad├¡a de habitaci├│n	155.80	10	1558.00	0.00	0.00	1558.00
-54	54	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-55	55	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
-56	56	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
-57	57	\N	81	\N	\N	Estad├¡a de habitaci├│n	439.03	11	4829.33	0.00	0.00	4829.33
-58	58	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	1	116.86	0.00	0.00	116.86
-59	59	\N	57	\N	\N	Estad├¡a de habitaci├│n	683.50	5	3417.50	0.00	0.00	3417.50
-60	59	\N	57	\N	\N	Estad├¡a de habitaci├│n	683.50	5	3417.50	0.00	0.00	3417.50
-61	60	\N	112	\N	\N	Estad├¡a de habitaci├│n	210.33	13	2734.29	0.00	0.00	2734.29
-62	61	\N	896	\N	\N	Estad├¡a de habitaci├│n	699.26	8	5594.08	0.00	0.00	5594.08
-63	62	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
-64	63	\N	853	\N	\N	Estad├¡a de habitaci├│n	261.76	9	2355.84	0.00	0.00	2355.84
-65	64	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-66	65	\N	85	\N	\N	Estad├¡a de habitaci├│n	204.31	8	1634.48	0.00	0.00	1634.48
-67	66	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
-68	67	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
-69	68	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
-70	69	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
-71	70	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
-72	71	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
-73	72	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-74	73	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
-75	74	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-76	75	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	6	701.16	0.00	0.00	701.16
-77	76	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
-78	77	\N	38	\N	\N	Estad├¡a de habitaci├│n	229.98	15	3449.70	0.00	0.00	3449.70
-79	78	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
-80	79	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
-81	80	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
-82	81	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
-83	82	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
-84	83	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
-85	84	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
-86	85	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
-87	86	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
-88	87	\N	303	\N	\N	Estad├¡a de habitaci├│n	707.69	3	2123.07	0.00	0.00	2123.07
-89	87	\N	303	\N	\N	Estad├¡a de habitaci├│n	707.69	3	2123.07	0.00	0.00	2123.07
-90	88	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
-91	89	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
-92	90	\N	73	\N	\N	Estad├¡a de habitaci├│n	532.31	13	6920.03	0.00	0.00	6920.03
-93	90	\N	73	\N	\N	Estad├¡a de habitaci├│n	532.31	13	6920.03	0.00	0.00	6920.03
-94	91	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
-95	92	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
-96	93	\N	180	\N	\N	Estad├¡a de habitaci├│n	580.66	4	2322.64	0.00	0.00	2322.64
-97	94	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
-98	95	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
-99	96	\N	333	\N	\N	Estad├¡a de habitaci├│n	589.81	8	4718.48	0.00	0.00	4718.48
-100	96	\N	699	\N	\N	Estad├¡a de habitaci├│n	351.55	8	2812.40	0.00	0.00	2812.40
-101	97	\N	181	\N	\N	Estad├¡a de habitaci├│n	655.55	1	655.55	0.00	0.00	655.55
-102	97	\N	342	\N	\N	Estad├¡a de habitaci├│n	740.68	1	740.68	0.00	0.00	740.68
-103	98	\N	419	\N	\N	Estad├¡a de habitaci├│n	366.54	11	4031.94	0.00	0.00	4031.94
-104	98	\N	490	\N	\N	Estad├¡a de habitaci├│n	246.47	11	2711.17	0.00	0.00	2711.17
-105	98	\N	688	\N	\N	Estad├¡a de habitaci├│n	520.26	11	5722.86	0.00	0.00	5722.86
-106	99	\N	727	\N	\N	Estad├¡a de habitaci├│n	198.62	5	993.10	0.00	0.00	993.10
-107	100	\N	93	\N	\N	Estad├¡a de habitaci├│n	717.83	15	10767.45	0.00	0.00	10767.45
-108	100	\N	435	\N	\N	Estad├¡a de habitaci├│n	120.67	15	1810.05	0.00	0.00	1810.05
-109	100	\N	379	\N	\N	Estad├¡a de habitaci├│n	566.82	15	8502.30	0.00	0.00	8502.30
-110	101	\N	595	\N	\N	Estad├¡a de habitaci├│n	609.16	13	7919.08	0.00	0.00	7919.08
-111	102	\N	494	\N	\N	Estad├¡a de habitaci├│n	739.72	2	1479.44	0.00	0.00	1479.44
-112	102	\N	303	\N	\N	Estad├¡a de habitaci├│n	707.69	2	1415.38	0.00	0.00	1415.38
-113	103	\N	783	\N	\N	Estad├¡a de habitaci├│n	707.31	14	9902.34	0.00	0.00	9902.34
-114	103	\N	390	\N	\N	Estad├¡a de habitaci├│n	398.74	14	5582.36	0.00	0.00	5582.36
-115	103	\N	45	\N	\N	Estad├¡a de habitaci├│n	732.84	14	10259.76	0.00	0.00	10259.76
-116	103	\N	244	\N	\N	Estad├¡a de habitaci├│n	563.19	14	7884.66	0.00	0.00	7884.66
-117	104	\N	613	\N	\N	Estad├¡a de habitaci├│n	554.50	11	6099.50	0.00	0.00	6099.50
-118	104	\N	1	\N	\N	Estad├¡a de habitaci├│n	79.74	11	877.14	0.00	0.00	877.14
-119	104	\N	814	\N	\N	Estad├¡a de habitaci├│n	583.10	11	6414.10	0.00	0.00	6414.10
-120	105	\N	903	\N	\N	Estad├¡a de habitaci├│n	588.47	6	3530.82	0.00	0.00	3530.82
-121	106	\N	699	\N	\N	Estad├¡a de habitaci├│n	351.55	10	3515.50	0.00	0.00	3515.50
-122	107	\N	954	\N	\N	Estad├¡a de habitaci├│n	616.98	11	6786.78	0.00	0.00	6786.78
-123	107	\N	70	\N	\N	Estad├¡a de habitaci├│n	170.26	11	1872.86	0.00	0.00	1872.86
-124	107	\N	463	\N	\N	Estad├¡a de habitaci├│n	665.51	11	7320.61	0.00	0.00	7320.61
-125	108	\N	595	\N	\N	Estad├¡a de habitaci├│n	609.16	5	3045.80	0.00	0.00	3045.80
-126	109	\N	131	\N	\N	Estad├¡a de habitaci├│n	529.45	3	1588.35	0.00	0.00	1588.35
-127	109	\N	877	\N	\N	Estad├¡a de habitaci├│n	250.72	3	752.16	0.00	0.00	752.16
-128	110	\N	645	\N	\N	Estad├¡a de habitaci├│n	705.98	1	705.98	0.00	0.00	705.98
-129	111	\N	784	\N	\N	Estad├¡a de habitaci├│n	472.57	13	6143.41	0.00	0.00	6143.41
-130	112	\N	162	\N	\N	Estad├¡a de habitaci├│n	668.63	13	8692.19	0.00	0.00	8692.19
-131	112	\N	401	\N	\N	Estad├¡a de habitaci├│n	448.34	13	5828.42	0.00	0.00	5828.42
-132	113	\N	916	\N	\N	Estad├¡a de habitaci├│n	145.35	2	290.70	0.00	0.00	290.70
-133	114	\N	490	\N	\N	Estad├¡a de habitaci├│n	246.47	8	1971.76	0.00	0.00	1971.76
-134	114	\N	242	\N	\N	Estad├¡a de habitaci├│n	401.76	8	3214.08	0.00	0.00	3214.08
-135	115	\N	652	\N	\N	Estad├¡a de habitaci├│n	138.34	14	1936.76	0.00	0.00	1936.76
-136	115	\N	583	\N	\N	Estad├¡a de habitaci├│n	636.49	14	8910.86	0.00	0.00	8910.86
-137	116	\N	864	\N	\N	Estad├¡a de habitaci├│n	583.95	4	2335.80	0.00	0.00	2335.80
-138	117	\N	366	\N	\N	Estad├¡a de habitaci├│n	692.51	7	4847.57	0.00	0.00	4847.57
-139	118	\N	203	\N	\N	Estad├¡a de habitaci├│n	232.34	1	232.34	0.00	0.00	232.34
-140	118	\N	681	\N	\N	Estad├¡a de habitaci├│n	145.90	1	145.90	0.00	0.00	145.90
-141	119	\N	178	\N	\N	Estad├¡a de habitaci├│n	353.55	14	4949.70	0.00	0.00	4949.70
-142	119	\N	110	\N	\N	Estad├¡a de habitaci├│n	288.54	14	4039.56	0.00	0.00	4039.56
-143	119	\N	773	\N	\N	Estad├¡a de habitaci├│n	397.23	14	5561.22	0.00	0.00	5561.22
-144	120	\N	753	\N	\N	Estad├¡a de habitaci├│n	215.89	10	2158.90	0.00	0.00	2158.90
-145	120	\N	340	\N	\N	Estad├¡a de habitaci├│n	257.22	10	2572.20	0.00	0.00	2572.20
-146	121	\N	741	\N	\N	Estad├¡a de habitaci├│n	529.31	15	7939.65	0.00	0.00	7939.65
-147	121	\N	799	\N	\N	Estad├¡a de habitaci├│n	536.00	15	8040.00	0.00	0.00	8040.00
-148	121	\N	446	\N	\N	Estad├¡a de habitaci├│n	644.51	15	9667.65	0.00	0.00	9667.65
-149	122	\N	536	\N	\N	Estad├¡a de habitaci├│n	676.69	14	9473.66	0.00	0.00	9473.66
-150	122	\N	307	\N	\N	Estad├¡a de habitaci├│n	386.39	14	5409.46	0.00	0.00	5409.46
-151	123	\N	437	\N	\N	Estad├¡a de habitaci├│n	147.59	4	590.36	0.00	0.00	590.36
-152	124	\N	233	\N	\N	Estad├¡a de habitaci├│n	686.64	13	8926.32	0.00	0.00	8926.32
-153	124	\N	813	\N	\N	Estad├¡a de habitaci├│n	650.21	13	8452.73	0.00	0.00	8452.73
-154	125	\N	78	\N	\N	Estad├¡a de habitaci├│n	176.29	8	1410.32	0.00	0.00	1410.32
-155	125	\N	428	\N	\N	Estad├¡a de habitaci├│n	530.51	8	4244.08	0.00	0.00	4244.08
-156	126	\N	211	\N	\N	Estad├¡a de habitaci├│n	98.00	11	1078.00	0.00	0.00	1078.00
-157	127	\N	553	\N	\N	Estad├¡a de habitaci├│n	538.07	9	4842.63	0.00	0.00	4842.63
-158	127	\N	296	\N	\N	Estad├¡a de habitaci├│n	209.02	9	1881.18	0.00	0.00	1881.18
-159	127	\N	222	\N	\N	Estad├¡a de habitaci├│n	365.52	9	3289.68	0.00	0.00	3289.68
-160	127	\N	576	\N	\N	Estad├¡a de habitaci├│n	723.00	9	6507.00	0.00	0.00	6507.00
-161	128	\N	896	\N	\N	Estad├¡a de habitaci├│n	699.26	13	9090.38	0.00	0.00	9090.38
-162	129	\N	639	\N	\N	Estad├¡a de habitaci├│n	327.57	3	982.71	0.00	0.00	982.71
-163	129	\N	426	\N	\N	Estad├¡a de habitaci├│n	271.44	3	814.32	0.00	0.00	814.32
-164	130	\N	111	\N	\N	Estad├¡a de habitaci├│n	234.07	12	2808.84	0.00	0.00	2808.84
-165	131	\N	670	\N	\N	Estad├¡a de habitaci├│n	143.71	3	431.13	0.00	0.00	431.13
-166	131	\N	647	\N	\N	Estad├¡a de habitaci├│n	403.25	3	1209.75	0.00	0.00	1209.75
-167	132	\N	559	\N	\N	Estad├¡a de habitaci├│n	252.82	4	1011.28	0.00	0.00	1011.28
-168	132	\N	673	\N	\N	Estad├¡a de habitaci├│n	254.28	4	1017.12	0.00	0.00	1017.12
-169	133	\N	480	\N	\N	Estad├¡a de habitaci├│n	514.60	8	4116.80	0.00	0.00	4116.80
-170	134	\N	147	\N	\N	Estad├¡a de habitaci├│n	281.19	13	3655.47	0.00	0.00	3655.47
-171	135	\N	836	\N	\N	Estad├¡a de habitaci├│n	529.56	1	529.56	0.00	0.00	529.56
-172	135	\N	154	\N	\N	Estad├¡a de habitaci├│n	178.37	1	178.37	0.00	0.00	178.37
-173	135	\N	752	\N	\N	Estad├¡a de habitaci├│n	201.36	1	201.36	0.00	0.00	201.36
-174	136	\N	673	\N	\N	Estad├¡a de habitaci├│n	254.28	7	1779.96	0.00	0.00	1779.96
-175	137	\N	933	\N	\N	Estad├¡a de habitaci├│n	485.18	3	1455.54	0.00	0.00	1455.54
-176	137	\N	831	\N	\N	Estad├¡a de habitaci├│n	749.82	3	2249.46	0.00	0.00	2249.46
-177	138	\N	817	\N	\N	Estad├¡a de habitaci├│n	91.00	15	1365.00	0.00	0.00	1365.00
-178	138	\N	165	\N	\N	Estad├¡a de habitaci├│n	144.18	15	2162.70	0.00	0.00	2162.70
-179	139	\N	380	\N	\N	Estad├¡a de habitaci├│n	190.39	13	2475.07	0.00	0.00	2475.07
-180	139	\N	435	\N	\N	Estad├¡a de habitaci├│n	120.67	13	1568.71	0.00	0.00	1568.71
-181	139	\N	836	\N	\N	Estad├¡a de habitaci├│n	529.56	13	6884.28	0.00	0.00	6884.28
-182	140	\N	456	\N	\N	Estad├¡a de habitaci├│n	744.84	9	6703.56	0.00	0.00	6703.56
-183	140	\N	23	\N	\N	Estad├¡a de habitaci├│n	394.30	9	3548.70	0.00	0.00	3548.70
-184	140	\N	246	\N	\N	Estad├¡a de habitaci├│n	351.19	9	3160.71	0.00	0.00	3160.71
-185	141	\N	935	\N	\N	Estad├¡a de habitaci├│n	740.62	12	8887.44	0.00	0.00	8887.44
-186	141	\N	33	\N	\N	Estad├¡a de habitaci├│n	273.74	12	3284.88	0.00	0.00	3284.88
-187	142	\N	429	\N	\N	Estad├¡a de habitaci├│n	575.66	8	4605.28	0.00	0.00	4605.28
-188	143	\N	11	\N	\N	Estad├¡a de habitaci├│n	658.48	10	6584.80	0.00	0.00	6584.80
-189	144	\N	628	\N	\N	Estad├¡a de habitaci├│n	75.26	6	451.56	0.00	0.00	451.56
-190	144	\N	256	\N	\N	Estad├¡a de habitaci├│n	536.08	6	3216.48	0.00	0.00	3216.48
-191	145	\N	299	\N	\N	Estad├¡a de habitaci├│n	723.50	7	5064.50	0.00	0.00	5064.50
-192	145	\N	626	\N	\N	Estad├¡a de habitaci├│n	746.09	7	5222.63	0.00	0.00	5222.63
-193	146	\N	906	\N	\N	Estad├¡a de habitaci├│n	88.00	3	264.00	0.00	0.00	264.00
-194	146	\N	397	\N	\N	Estad├¡a de habitaci├│n	116.01	3	348.03	0.00	0.00	348.03
-195	146	\N	947	\N	\N	Estad├¡a de habitaci├│n	92.74	3	278.22	0.00	0.00	278.22
-196	146	\N	229	\N	\N	Estad├¡a de habitaci├│n	118.17	3	354.51	0.00	0.00	354.51
-197	147	\N	485	\N	\N	Estad├¡a de habitaci├│n	88.73	3	266.19	0.00	0.00	266.19
-198	148	\N	724	\N	\N	Estad├¡a de habitaci├│n	552.42	15	8286.30	0.00	0.00	8286.30
-199	148	\N	361	\N	\N	Estad├¡a de habitaci├│n	487.63	15	7314.45	0.00	0.00	7314.45
-200	149	\N	419	\N	\N	Estad├¡a de habitaci├│n	366.54	15	5498.10	0.00	0.00	5498.10
-201	149	\N	396	\N	\N	Estad├¡a de habitaci├│n	560.39	15	8405.85	0.00	0.00	8405.85
-202	149	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
-203	150	\N	898	\N	\N	Estad├¡a de habitaci├│n	314.31	15	4714.65	0.00	0.00	4714.65
-204	151	\N	773	\N	\N	Estad├¡a de habitaci├│n	397.23	10	3972.30	0.00	0.00	3972.30
-205	152	\N	368	\N	\N	Estad├¡a de habitaci├│n	682.15	5	3410.75	0.00	0.00	3410.75
-206	153	\N	452	\N	\N	Estad├¡a de habitaci├│n	447.73	15	6715.95	0.00	0.00	6715.95
-207	154	\N	640	\N	\N	Estad├¡a de habitaci├│n	714.98	15	10724.70	0.00	0.00	10724.70
-208	155	\N	646	\N	\N	Estad├¡a de habitaci├│n	441.45	3	1324.35	0.00	0.00	1324.35
-209	156	\N	521	\N	\N	Estad├¡a de habitaci├│n	489.48	7	3426.36	0.00	0.00	3426.36
-210	156	\N	439	\N	\N	Estad├¡a de habitaci├│n	489.17	7	3424.19	0.00	0.00	3424.19
-211	157	\N	535	\N	\N	Estad├¡a de habitaci├│n	734.51	11	8079.61	0.00	0.00	8079.61
-212	158	\N	64	\N	\N	Estad├¡a de habitaci├│n	384.40	10	3844.00	0.00	0.00	3844.00
-213	159	\N	655	\N	\N	Estad├¡a de habitaci├│n	566.78	2	1133.56	0.00	0.00	1133.56
-214	160	\N	314	\N	\N	Estad├¡a de habitaci├│n	82.38	7	576.66	0.00	0.00	576.66
-215	161	\N	960	\N	\N	Estad├¡a de habitaci├│n	616.71	11	6783.81	0.00	0.00	6783.81
-216	162	\N	409	\N	\N	Estad├¡a de habitaci├│n	655.47	15	9832.05	0.00	0.00	9832.05
-217	163	\N	728	\N	\N	Estad├¡a de habitaci├│n	518.03	9	4662.27	0.00	0.00	4662.27
-218	164	\N	973	\N	\N	Estad├¡a de habitaci├│n	111.26	4	445.04	0.00	0.00	445.04
-219	165	\N	488	\N	\N	Estad├¡a de habitaci├│n	532.94	14	7461.16	0.00	0.00	7461.16
-220	165	\N	229	\N	\N	Estad├¡a de habitaci├│n	118.17	14	1654.38	0.00	0.00	1654.38
-221	166	\N	852	\N	\N	Estad├¡a de habitaci├│n	408.84	3	1226.52	0.00	0.00	1226.52
-222	166	\N	520	\N	\N	Estad├¡a de habitaci├│n	169.63	3	508.89	0.00	0.00	508.89
-223	167	\N	694	\N	\N	Estad├¡a de habitaci├│n	172.26	12	2067.12	0.00	0.00	2067.12
-224	168	\N	915	\N	\N	Estad├¡a de habitaci├│n	628.76	1	628.76	0.00	0.00	628.76
-225	169	\N	248	\N	\N	Estad├¡a de habitaci├│n	137.99	5	689.95	0.00	0.00	689.95
-226	170	\N	536	\N	\N	Estad├¡a de habitaci├│n	676.69	12	8120.28	0.00	0.00	8120.28
-227	171	\N	202	\N	\N	Estad├¡a de habitaci├│n	548.44	4	2193.76	0.00	0.00	2193.76
-228	171	\N	518	\N	\N	Estad├¡a de habitaci├│n	400.95	4	1603.80	0.00	0.00	1603.80
-229	172	\N	532	\N	\N	Estad├¡a de habitaci├│n	67.00	11	737.00	0.00	0.00	737.00
-230	173	\N	806	\N	\N	Estad├¡a de habitaci├│n	117.18	4	468.72	0.00	0.00	468.72
-231	174	\N	816	\N	\N	Estad├¡a de habitaci├│n	237.26	6	1423.56	0.00	0.00	1423.56
-232	174	\N	367	\N	\N	Estad├¡a de habitaci├│n	476.20	6	2857.20	0.00	0.00	2857.20
-233	175	\N	561	\N	\N	Estad├¡a de habitaci├│n	473.37	3	1420.11	0.00	0.00	1420.11
-234	176	\N	464	\N	\N	Estad├¡a de habitaci├│n	600.28	1	600.28	0.00	0.00	600.28
-235	177	\N	288	\N	\N	Estad├¡a de habitaci├│n	86.00	10	860.00	0.00	0.00	860.00
-236	178	\N	332	\N	\N	Estad├¡a de habitaci├│n	470.38	13	6114.94	0.00	0.00	6114.94
-237	178	\N	820	\N	\N	Estad├¡a de habitaci├│n	148.49	13	1930.37	0.00	0.00	1930.37
-238	179	\N	418	\N	\N	Estad├¡a de habitaci├│n	700.87	3	2102.61	0.00	0.00	2102.61
-239	180	\N	301	\N	\N	Estad├¡a de habitaci├│n	508.72	5	2543.60	0.00	0.00	2543.60
-240	155	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-241	101	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1	1	\N	331	\N	\N	Estadía de habitación	116.86	1	116.86	0.00	0.00	116.86
+2	2	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+3	3	\N	331	\N	\N	Estadía de habitación	116.86	4	467.44	0.00	0.00	467.44
+4	4	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+5	5	\N	331	\N	\N	Estadía de habitación	116.86	11	1285.46	0.00	0.00	1285.46
+6	6	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+7	7	\N	331	\N	\N	Estadía de habitación	116.86	13	1519.18	0.00	0.00	1519.18
+8	8	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+9	9	\N	331	\N	\N	Estadía de habitación	116.86	2	233.72	0.00	0.00	233.72
+10	10	\N	331	\N	\N	Estadía de habitación	116.86	10	1168.60	0.00	0.00	1168.60
+11	11	\N	282	\N	\N	Estadía de habitación	748.15	10	7481.50	0.00	0.00	7481.50
+12	12	\N	331	\N	\N	Estadía de habitación	116.86	15	1752.90	0.00	0.00	1752.90
+13	13	\N	331	\N	\N	Estadía de habitación	116.86	11	1285.46	0.00	0.00	1285.46
+14	14	\N	331	\N	\N	Estadía de habitación	116.86	2	233.72	0.00	0.00	233.72
+15	15	\N	331	\N	\N	Estadía de habitación	116.86	15	1752.90	0.00	0.00	1752.90
+16	16	\N	331	\N	\N	Estadía de habitación	116.86	1	116.86	0.00	0.00	116.86
+17	17	\N	331	\N	\N	Estadía de habitación	116.86	9	1051.74	0.00	0.00	1051.74
+18	18	\N	331	\N	\N	Estadía de habitación	116.86	13	1519.18	0.00	0.00	1519.18
+19	19	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+20	20	\N	151	\N	\N	Estadía de habitación	110.54	14	1547.56	0.00	0.00	1547.56
+21	21	\N	331	\N	\N	Estadía de habitación	116.86	12	1402.32	0.00	0.00	1402.32
+22	22	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+23	23	\N	331	\N	\N	Estadía de habitación	116.86	14	1636.04	0.00	0.00	1636.04
+24	24	\N	13	\N	\N	Estadía de habitación	646.25	5	3231.25	0.00	0.00	3231.25
+25	25	\N	331	\N	\N	Estadía de habitación	116.86	4	467.44	0.00	0.00	467.44
+26	26	\N	331	\N	\N	Estadía de habitación	116.86	15	1752.90	0.00	0.00	1752.90
+27	27	\N	331	\N	\N	Estadía de habitación	116.86	6	701.16	0.00	0.00	701.16
+28	28	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+29	29	\N	331	\N	\N	Estadía de habitación	116.86	12	1402.32	0.00	0.00	1402.32
+30	30	\N	331	\N	\N	Estadía de habitación	116.86	14	1636.04	0.00	0.00	1636.04
+31	31	\N	78	\N	\N	Estadía de habitación	176.29	10	1762.90	0.00	0.00	1762.90
+32	32	\N	331	\N	\N	Estadía de habitación	116.86	12	1402.32	0.00	0.00	1402.32
+33	33	\N	331	\N	\N	Estadía de habitación	116.86	12	1402.32	0.00	0.00	1402.32
+34	34	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+35	35	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+36	36	\N	331	\N	\N	Estadía de habitación	116.86	14	1636.04	0.00	0.00	1636.04
+37	37	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+38	38	\N	331	\N	\N	Estadía de habitación	116.86	11	1285.46	0.00	0.00	1285.46
+39	39	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+40	40	\N	331	\N	\N	Estadía de habitación	116.86	4	467.44	0.00	0.00	467.44
+41	41	\N	49	\N	\N	Estadía de habitación	451.40	12	5416.80	0.00	0.00	5416.80
+42	42	\N	331	\N	\N	Estadía de habitación	116.86	13	1519.18	0.00	0.00	1519.18
+43	43	\N	331	\N	\N	Estadía de habitación	116.86	13	1519.18	0.00	0.00	1519.18
+44	44	\N	331	\N	\N	Estadía de habitación	116.86	9	1051.74	0.00	0.00	1051.74
+45	45	\N	331	\N	\N	Estadía de habitación	116.86	9	1051.74	0.00	0.00	1051.74
+46	46	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+47	47	\N	331	\N	\N	Estadía de habitación	116.86	11	1285.46	0.00	0.00	1285.46
+48	48	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+49	49	\N	17	\N	\N	Estadía de habitación	439.08	2	878.16	0.00	0.00	878.16
+50	50	\N	260	\N	\N	Estadía de habitación	431.26	9	3881.34	0.00	0.00	3881.34
+51	51	\N	331	\N	\N	Estadía de habitación	116.86	5	584.30	0.00	0.00	584.30
+52	52	\N	331	\N	\N	Estadía de habitación	116.86	12	1402.32	0.00	0.00	1402.32
+53	53	\N	120	\N	\N	Estadía de habitación	155.80	10	1558.00	0.00	0.00	1558.00
+54	54	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+55	55	\N	331	\N	\N	Estadía de habitación	116.86	10	1168.60	0.00	0.00	1168.60
+56	56	\N	331	\N	\N	Estadía de habitación	116.86	4	467.44	0.00	0.00	467.44
+57	57	\N	81	\N	\N	Estadía de habitación	439.03	11	4829.33	0.00	0.00	4829.33
+58	58	\N	331	\N	\N	Estadía de habitación	116.86	1	116.86	0.00	0.00	116.86
+59	59	\N	57	\N	\N	Estadía de habitación	683.50	5	3417.50	0.00	0.00	3417.50
+60	59	\N	57	\N	\N	Estadía de habitación	683.50	5	3417.50	0.00	0.00	3417.50
+61	60	\N	112	\N	\N	Estadía de habitación	210.33	13	2734.29	0.00	0.00	2734.29
+62	61	\N	896	\N	\N	Estadía de habitación	699.26	8	5594.08	0.00	0.00	5594.08
+63	62	\N	331	\N	\N	Estadía de habitación	116.86	5	584.30	0.00	0.00	584.30
+64	63	\N	853	\N	\N	Estadía de habitación	261.76	9	2355.84	0.00	0.00	2355.84
+65	64	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+66	65	\N	85	\N	\N	Estadía de habitación	204.31	8	1634.48	0.00	0.00	1634.48
+67	66	\N	331	\N	\N	Estadía de habitación	116.86	12	1402.32	0.00	0.00	1402.32
+68	67	\N	331	\N	\N	Estadía de habitación	116.86	13	1519.18	0.00	0.00	1519.18
+69	68	\N	331	\N	\N	Estadía de habitación	116.86	7	818.02	0.00	0.00	818.02
+70	69	\N	331	\N	\N	Estadía de habitación	116.86	4	467.44	0.00	0.00	467.44
+71	70	\N	331	\N	\N	Estadía de habitación	116.86	9	1051.74	0.00	0.00	1051.74
+72	71	\N	331	\N	\N	Estadía de habitación	116.86	3	350.58	0.00	0.00	350.58
+73	72	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+74	73	\N	331	\N	\N	Estadía de habitación	116.86	10	1168.60	0.00	0.00	1168.60
+75	74	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+76	75	\N	331	\N	\N	Estadía de habitación	116.86	6	701.16	0.00	0.00	701.16
+77	76	\N	331	\N	\N	Estadía de habitación	116.86	11	1285.46	0.00	0.00	1285.46
+78	77	\N	38	\N	\N	Estadía de habitación	229.98	15	3449.70	0.00	0.00	3449.70
+79	78	\N	331	\N	\N	Estadía de habitación	116.86	11	1285.46	0.00	0.00	1285.46
+80	79	\N	331	\N	\N	Estadía de habitación	116.86	4	467.44	0.00	0.00	467.44
+81	80	\N	331	\N	\N	Estadía de habitación	116.86	4	467.44	0.00	0.00	467.44
+82	81	\N	331	\N	\N	Estadía de habitación	116.86	8	934.88	0.00	0.00	934.88
+83	82	\N	331	\N	\N	Estadía de habitación	116.86	5	584.30	0.00	0.00	584.30
+84	83	\N	331	\N	\N	Estadía de habitación	116.86	7	818.02	0.00	0.00	818.02
+85	84	\N	331	\N	\N	Estadía de habitación	116.86	5	584.30	0.00	0.00	584.30
+86	85	\N	331	\N	\N	Estadía de habitación	116.86	15	1752.90	0.00	0.00	1752.90
+87	86	\N	331	\N	\N	Estadía de habitación	116.86	5	584.30	0.00	0.00	584.30
+88	87	\N	303	\N	\N	Estadía de habitación	707.69	3	2123.07	0.00	0.00	2123.07
+89	87	\N	303	\N	\N	Estadía de habitación	707.69	3	2123.07	0.00	0.00	2123.07
+90	88	\N	331	\N	\N	Estadía de habitación	116.86	10	1168.60	0.00	0.00	1168.60
+91	89	\N	331	\N	\N	Estadía de habitación	116.86	15	1752.90	0.00	0.00	1752.90
+92	90	\N	73	\N	\N	Estadía de habitación	532.31	13	6920.03	0.00	0.00	6920.03
+93	90	\N	73	\N	\N	Estadía de habitación	532.31	13	6920.03	0.00	0.00	6920.03
+94	91	\N	331	\N	\N	Estadía de habitación	116.86	7	818.02	0.00	0.00	818.02
+95	92	\N	331	\N	\N	Estadía de habitación	116.86	14	1636.04	0.00	0.00	1636.04
+96	93	\N	180	\N	\N	Estadía de habitación	580.66	4	2322.64	0.00	0.00	2322.64
+97	94	\N	331	\N	\N	Estadía de habitación	116.86	7	818.02	0.00	0.00	818.02
+98	95	\N	331	\N	\N	Estadía de habitación	116.86	11	1285.46	0.00	0.00	1285.46
+99	96	\N	333	\N	\N	Estadía de habitación	589.81	8	4718.48	0.00	0.00	4718.48
+100	96	\N	699	\N	\N	Estadía de habitación	351.55	8	2812.40	0.00	0.00	2812.40
+101	97	\N	181	\N	\N	Estadía de habitación	655.55	1	655.55	0.00	0.00	655.55
+102	97	\N	342	\N	\N	Estadía de habitación	740.68	1	740.68	0.00	0.00	740.68
+103	98	\N	419	\N	\N	Estadía de habitación	366.54	11	4031.94	0.00	0.00	4031.94
+104	98	\N	490	\N	\N	Estadía de habitación	246.47	11	2711.17	0.00	0.00	2711.17
+105	98	\N	688	\N	\N	Estadía de habitación	520.26	11	5722.86	0.00	0.00	5722.86
+106	99	\N	727	\N	\N	Estadía de habitación	198.62	5	993.10	0.00	0.00	993.10
+107	100	\N	93	\N	\N	Estadía de habitación	717.83	15	10767.45	0.00	0.00	10767.45
+108	100	\N	435	\N	\N	Estadía de habitación	120.67	15	1810.05	0.00	0.00	1810.05
+109	100	\N	379	\N	\N	Estadía de habitación	566.82	15	8502.30	0.00	0.00	8502.30
+110	101	\N	595	\N	\N	Estadía de habitación	609.16	13	7919.08	0.00	0.00	7919.08
+111	102	\N	494	\N	\N	Estadía de habitación	739.72	2	1479.44	0.00	0.00	1479.44
+112	102	\N	303	\N	\N	Estadía de habitación	707.69	2	1415.38	0.00	0.00	1415.38
+113	103	\N	783	\N	\N	Estadía de habitación	707.31	14	9902.34	0.00	0.00	9902.34
+114	103	\N	390	\N	\N	Estadía de habitación	398.74	14	5582.36	0.00	0.00	5582.36
+115	103	\N	45	\N	\N	Estadía de habitación	732.84	14	10259.76	0.00	0.00	10259.76
+116	103	\N	244	\N	\N	Estadía de habitación	563.19	14	7884.66	0.00	0.00	7884.66
+117	104	\N	613	\N	\N	Estadía de habitación	554.50	11	6099.50	0.00	0.00	6099.50
+118	104	\N	1	\N	\N	Estadía de habitación	79.74	11	877.14	0.00	0.00	877.14
+119	104	\N	814	\N	\N	Estadía de habitación	583.10	11	6414.10	0.00	0.00	6414.10
+120	105	\N	903	\N	\N	Estadía de habitación	588.47	6	3530.82	0.00	0.00	3530.82
+121	106	\N	699	\N	\N	Estadía de habitación	351.55	10	3515.50	0.00	0.00	3515.50
+122	107	\N	954	\N	\N	Estadía de habitación	616.98	11	6786.78	0.00	0.00	6786.78
+123	107	\N	70	\N	\N	Estadía de habitación	170.26	11	1872.86	0.00	0.00	1872.86
+124	107	\N	463	\N	\N	Estadía de habitación	665.51	11	7320.61	0.00	0.00	7320.61
+125	108	\N	595	\N	\N	Estadía de habitación	609.16	5	3045.80	0.00	0.00	3045.80
+126	109	\N	131	\N	\N	Estadía de habitación	529.45	3	1588.35	0.00	0.00	1588.35
+127	109	\N	877	\N	\N	Estadía de habitación	250.72	3	752.16	0.00	0.00	752.16
+128	110	\N	645	\N	\N	Estadía de habitación	705.98	1	705.98	0.00	0.00	705.98
+129	111	\N	784	\N	\N	Estadía de habitación	472.57	13	6143.41	0.00	0.00	6143.41
+130	112	\N	162	\N	\N	Estadía de habitación	668.63	13	8692.19	0.00	0.00	8692.19
+131	112	\N	401	\N	\N	Estadía de habitación	448.34	13	5828.42	0.00	0.00	5828.42
+132	113	\N	916	\N	\N	Estadía de habitación	145.35	2	290.70	0.00	0.00	290.70
+133	114	\N	490	\N	\N	Estadía de habitación	246.47	8	1971.76	0.00	0.00	1971.76
+134	114	\N	242	\N	\N	Estadía de habitación	401.76	8	3214.08	0.00	0.00	3214.08
+135	115	\N	652	\N	\N	Estadía de habitación	138.34	14	1936.76	0.00	0.00	1936.76
+136	115	\N	583	\N	\N	Estadía de habitación	636.49	14	8910.86	0.00	0.00	8910.86
+137	116	\N	864	\N	\N	Estadía de habitación	583.95	4	2335.80	0.00	0.00	2335.80
+138	117	\N	366	\N	\N	Estadía de habitación	692.51	7	4847.57	0.00	0.00	4847.57
+139	118	\N	203	\N	\N	Estadía de habitación	232.34	1	232.34	0.00	0.00	232.34
+140	118	\N	681	\N	\N	Estadía de habitación	145.90	1	145.90	0.00	0.00	145.90
+141	119	\N	178	\N	\N	Estadía de habitación	353.55	14	4949.70	0.00	0.00	4949.70
+142	119	\N	110	\N	\N	Estadía de habitación	288.54	14	4039.56	0.00	0.00	4039.56
+143	119	\N	773	\N	\N	Estadía de habitación	397.23	14	5561.22	0.00	0.00	5561.22
+144	120	\N	753	\N	\N	Estadía de habitación	215.89	10	2158.90	0.00	0.00	2158.90
+145	120	\N	340	\N	\N	Estadía de habitación	257.22	10	2572.20	0.00	0.00	2572.20
+146	121	\N	741	\N	\N	Estadía de habitación	529.31	15	7939.65	0.00	0.00	7939.65
+147	121	\N	799	\N	\N	Estadía de habitación	536.00	15	8040.00	0.00	0.00	8040.00
+148	121	\N	446	\N	\N	Estadía de habitación	644.51	15	9667.65	0.00	0.00	9667.65
+149	122	\N	536	\N	\N	Estadía de habitación	676.69	14	9473.66	0.00	0.00	9473.66
+150	122	\N	307	\N	\N	Estadía de habitación	386.39	14	5409.46	0.00	0.00	5409.46
+151	123	\N	437	\N	\N	Estadía de habitación	147.59	4	590.36	0.00	0.00	590.36
+152	124	\N	233	\N	\N	Estadía de habitación	686.64	13	8926.32	0.00	0.00	8926.32
+153	124	\N	813	\N	\N	Estadía de habitación	650.21	13	8452.73	0.00	0.00	8452.73
+154	125	\N	78	\N	\N	Estadía de habitación	176.29	8	1410.32	0.00	0.00	1410.32
+155	125	\N	428	\N	\N	Estadía de habitación	530.51	8	4244.08	0.00	0.00	4244.08
+156	126	\N	211	\N	\N	Estadía de habitación	98.00	11	1078.00	0.00	0.00	1078.00
+157	127	\N	553	\N	\N	Estadía de habitación	538.07	9	4842.63	0.00	0.00	4842.63
+158	127	\N	296	\N	\N	Estadía de habitación	209.02	9	1881.18	0.00	0.00	1881.18
+159	127	\N	222	\N	\N	Estadía de habitación	365.52	9	3289.68	0.00	0.00	3289.68
+160	127	\N	576	\N	\N	Estadía de habitación	723.00	9	6507.00	0.00	0.00	6507.00
+161	128	\N	896	\N	\N	Estadía de habitación	699.26	13	9090.38	0.00	0.00	9090.38
+162	129	\N	639	\N	\N	Estadía de habitación	327.57	3	982.71	0.00	0.00	982.71
+163	129	\N	426	\N	\N	Estadía de habitación	271.44	3	814.32	0.00	0.00	814.32
+164	130	\N	111	\N	\N	Estadía de habitación	234.07	12	2808.84	0.00	0.00	2808.84
+165	131	\N	670	\N	\N	Estadía de habitación	143.71	3	431.13	0.00	0.00	431.13
+166	131	\N	647	\N	\N	Estadía de habitación	403.25	3	1209.75	0.00	0.00	1209.75
+167	132	\N	559	\N	\N	Estadía de habitación	252.82	4	1011.28	0.00	0.00	1011.28
+168	132	\N	673	\N	\N	Estadía de habitación	254.28	4	1017.12	0.00	0.00	1017.12
+169	133	\N	480	\N	\N	Estadía de habitación	514.60	8	4116.80	0.00	0.00	4116.80
+170	134	\N	147	\N	\N	Estadía de habitación	281.19	13	3655.47	0.00	0.00	3655.47
+171	135	\N	836	\N	\N	Estadía de habitación	529.56	1	529.56	0.00	0.00	529.56
+172	135	\N	154	\N	\N	Estadía de habitación	178.37	1	178.37	0.00	0.00	178.37
+173	135	\N	752	\N	\N	Estadía de habitación	201.36	1	201.36	0.00	0.00	201.36
+174	136	\N	673	\N	\N	Estadía de habitación	254.28	7	1779.96	0.00	0.00	1779.96
+175	137	\N	933	\N	\N	Estadía de habitación	485.18	3	1455.54	0.00	0.00	1455.54
+176	137	\N	831	\N	\N	Estadía de habitación	749.82	3	2249.46	0.00	0.00	2249.46
+177	138	\N	817	\N	\N	Estadía de habitación	91.00	15	1365.00	0.00	0.00	1365.00
+178	138	\N	165	\N	\N	Estadía de habitación	144.18	15	2162.70	0.00	0.00	2162.70
+179	139	\N	380	\N	\N	Estadía de habitación	190.39	13	2475.07	0.00	0.00	2475.07
+180	139	\N	435	\N	\N	Estadía de habitación	120.67	13	1568.71	0.00	0.00	1568.71
+181	139	\N	836	\N	\N	Estadía de habitación	529.56	13	6884.28	0.00	0.00	6884.28
+182	140	\N	456	\N	\N	Estadía de habitación	744.84	9	6703.56	0.00	0.00	6703.56
+183	140	\N	23	\N	\N	Estadía de habitación	394.30	9	3548.70	0.00	0.00	3548.70
+184	140	\N	246	\N	\N	Estadía de habitación	351.19	9	3160.71	0.00	0.00	3160.71
+185	141	\N	935	\N	\N	Estadía de habitación	740.62	12	8887.44	0.00	0.00	8887.44
+186	141	\N	33	\N	\N	Estadía de habitación	273.74	12	3284.88	0.00	0.00	3284.88
+187	142	\N	429	\N	\N	Estadía de habitación	575.66	8	4605.28	0.00	0.00	4605.28
+188	143	\N	11	\N	\N	Estadía de habitación	658.48	10	6584.80	0.00	0.00	6584.80
+189	144	\N	628	\N	\N	Estadía de habitación	75.26	6	451.56	0.00	0.00	451.56
+190	144	\N	256	\N	\N	Estadía de habitación	536.08	6	3216.48	0.00	0.00	3216.48
+191	145	\N	299	\N	\N	Estadía de habitación	723.50	7	5064.50	0.00	0.00	5064.50
+192	145	\N	626	\N	\N	Estadía de habitación	746.09	7	5222.63	0.00	0.00	5222.63
+193	146	\N	906	\N	\N	Estadía de habitación	88.00	3	264.00	0.00	0.00	264.00
+194	146	\N	397	\N	\N	Estadía de habitación	116.01	3	348.03	0.00	0.00	348.03
+195	146	\N	947	\N	\N	Estadía de habitación	92.74	3	278.22	0.00	0.00	278.22
+196	146	\N	229	\N	\N	Estadía de habitación	118.17	3	354.51	0.00	0.00	354.51
+197	147	\N	485	\N	\N	Estadía de habitación	88.73	3	266.19	0.00	0.00	266.19
+198	148	\N	724	\N	\N	Estadía de habitación	552.42	15	8286.30	0.00	0.00	8286.30
+199	148	\N	361	\N	\N	Estadía de habitación	487.63	15	7314.45	0.00	0.00	7314.45
+200	149	\N	419	\N	\N	Estadía de habitación	366.54	15	5498.10	0.00	0.00	5498.10
+201	149	\N	396	\N	\N	Estadía de habitación	560.39	15	8405.85	0.00	0.00	8405.85
+202	149	\N	331	\N	\N	Estadía de habitación	116.86	15	1752.90	0.00	0.00	1752.90
+203	150	\N	898	\N	\N	Estadía de habitación	314.31	15	4714.65	0.00	0.00	4714.65
+204	151	\N	773	\N	\N	Estadía de habitación	397.23	10	3972.30	0.00	0.00	3972.30
+205	152	\N	368	\N	\N	Estadía de habitación	682.15	5	3410.75	0.00	0.00	3410.75
+206	153	\N	452	\N	\N	Estadía de habitación	447.73	15	6715.95	0.00	0.00	6715.95
+207	154	\N	640	\N	\N	Estadía de habitación	714.98	15	10724.70	0.00	0.00	10724.70
+208	155	\N	646	\N	\N	Estadía de habitación	441.45	3	1324.35	0.00	0.00	1324.35
+209	156	\N	521	\N	\N	Estadía de habitación	489.48	7	3426.36	0.00	0.00	3426.36
+210	156	\N	439	\N	\N	Estadía de habitación	489.17	7	3424.19	0.00	0.00	3424.19
+211	157	\N	535	\N	\N	Estadía de habitación	734.51	11	8079.61	0.00	0.00	8079.61
+212	158	\N	64	\N	\N	Estadía de habitación	384.40	10	3844.00	0.00	0.00	3844.00
+213	159	\N	655	\N	\N	Estadía de habitación	566.78	2	1133.56	0.00	0.00	1133.56
+214	160	\N	314	\N	\N	Estadía de habitación	82.38	7	576.66	0.00	0.00	576.66
+215	161	\N	960	\N	\N	Estadía de habitación	616.71	11	6783.81	0.00	0.00	6783.81
+216	162	\N	409	\N	\N	Estadía de habitación	655.47	15	9832.05	0.00	0.00	9832.05
+217	163	\N	728	\N	\N	Estadía de habitación	518.03	9	4662.27	0.00	0.00	4662.27
+218	164	\N	973	\N	\N	Estadía de habitación	111.26	4	445.04	0.00	0.00	445.04
+219	165	\N	488	\N	\N	Estadía de habitación	532.94	14	7461.16	0.00	0.00	7461.16
+220	165	\N	229	\N	\N	Estadía de habitación	118.17	14	1654.38	0.00	0.00	1654.38
+221	166	\N	852	\N	\N	Estadía de habitación	408.84	3	1226.52	0.00	0.00	1226.52
+222	166	\N	520	\N	\N	Estadía de habitación	169.63	3	508.89	0.00	0.00	508.89
+223	167	\N	694	\N	\N	Estadía de habitación	172.26	12	2067.12	0.00	0.00	2067.12
+224	168	\N	915	\N	\N	Estadía de habitación	628.76	1	628.76	0.00	0.00	628.76
+225	169	\N	248	\N	\N	Estadía de habitación	137.99	5	689.95	0.00	0.00	689.95
+226	170	\N	536	\N	\N	Estadía de habitación	676.69	12	8120.28	0.00	0.00	8120.28
+227	171	\N	202	\N	\N	Estadía de habitación	548.44	4	2193.76	0.00	0.00	2193.76
+228	171	\N	518	\N	\N	Estadía de habitación	400.95	4	1603.80	0.00	0.00	1603.80
+229	172	\N	532	\N	\N	Estadía de habitación	67.00	11	737.00	0.00	0.00	737.00
+230	173	\N	806	\N	\N	Estadía de habitación	117.18	4	468.72	0.00	0.00	468.72
+231	174	\N	816	\N	\N	Estadía de habitación	237.26	6	1423.56	0.00	0.00	1423.56
+232	174	\N	367	\N	\N	Estadía de habitación	476.20	6	2857.20	0.00	0.00	2857.20
+233	175	\N	561	\N	\N	Estadía de habitación	473.37	3	1420.11	0.00	0.00	1420.11
+234	176	\N	464	\N	\N	Estadía de habitación	600.28	1	600.28	0.00	0.00	600.28
+235	177	\N	288	\N	\N	Estadía de habitación	86.00	10	860.00	0.00	0.00	860.00
+236	178	\N	332	\N	\N	Estadía de habitación	470.38	13	6114.94	0.00	0.00	6114.94
+237	178	\N	820	\N	\N	Estadía de habitación	148.49	13	1930.37	0.00	0.00	1930.37
+238	179	\N	418	\N	\N	Estadía de habitación	700.87	3	2102.61	0.00	0.00	2102.61
+239	180	\N	301	\N	\N	Estadía de habitación	508.72	5	2543.60	0.00	0.00	2543.60
+240	155	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+241	101	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 242	143	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 243	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 244	142	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 245	32	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 246	146	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 247	52	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-248	97	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+248	97	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 249	9	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-250	144	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+250	144	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 251	124	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-252	169	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+252	169	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 253	92	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 254	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 255	169	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 256	142	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 257	21	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 258	67	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
-259	35	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+259	35	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 260	162	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 261	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 262	95	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 263	157	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
-264	22	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+264	22	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 265	25	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
 266	60	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-267	60	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+267	60	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 268	18	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
-269	160	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+269	160	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 270	66	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
-271	18	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-272	74	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+271	18	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+272	74	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 273	50	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 274	66	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 275	56	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
@@ -4429,9 +4429,9 @@ COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_hab
 285	129	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 286	18	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 287	25	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
-288	96	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-289	154	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-290	158	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+288	96	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+289	154	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+290	158	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 291	11	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
 292	87	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 293	163	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
@@ -4439,20 +4439,20 @@ COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_hab
 295	126	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 296	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 297	175	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
-298	173	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
-299	177	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+298	173	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
+299	177	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 300	44	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
 301	85	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 302	116	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-303	55	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+303	55	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 304	5	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 305	178	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
 306	118	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
-307	147	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+307	147	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 308	25	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
-309	25	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+309	25	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 310	179	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
-311	83	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+311	83	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 312	28	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 313	99	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 314	31	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
@@ -4461,10 +4461,10 @@ COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_hab
 317	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 318	144	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 319	165	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
-320	95	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+320	95	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 321	8	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 322	39	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
-323	28	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+323	28	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 324	117	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 325	55	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 326	102	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
@@ -4472,15 +4472,15 @@ COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_hab
 328	1	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 329	68	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 330	162	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-331	52	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
-332	105	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+331	52	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
+332	105	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 333	97	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
-334	112	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-335	13	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-336	164	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+334	112	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+335	13	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+336	164	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 337	87	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 338	166	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
-339	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+339	100	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 340	161	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 341	76	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 342	101	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
@@ -4488,31 +4488,31 @@ COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_hab
 344	175	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 345	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 346	170	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-347	114	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+347	114	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 348	130	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 349	151	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 350	38	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 351	160	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-352	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
-353	132	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-354	87	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
-355	53	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+352	103	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
+353	132	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+354	87	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
+355	53	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 356	153	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 357	142	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 358	67	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-359	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+359	135	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 360	101	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 361	41	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 362	57	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-363	74	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+363	74	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 364	59	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 365	8	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-366	2	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+366	2	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 367	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 368	46	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
-369	132	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+369	132	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 370	63	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
-371	47	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+371	47	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 372	53	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 373	40	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 374	24	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
@@ -4520,1045 +4520,1045 @@ COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_hab
 376	10	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 377	5	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 378	29	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
-379	158	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
-380	68	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+379	158	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
+380	68	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 381	136	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 382	134	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 383	102	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 384	127	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
-385	165	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+385	165	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 386	30	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
-387	67	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+387	67	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 388	124	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 389	10	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 390	99	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-391	108	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+391	108	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 392	2	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 393	33	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 394	1	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 395	37	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 396	36	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 397	142	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-398	21	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+398	21	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 399	20	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 400	40	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
-401	43	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-402	59	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-403	129	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
-404	13	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+401	43	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+402	59	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+403	129	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
+404	13	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 405	112	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-406	96	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-407	96	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+406	96	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+407	96	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 408	96	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 409	96	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 410	96	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 411	96	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-412	97	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-413	97	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+412	97	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+413	97	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 414	97	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 415	97	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 416	97	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 417	97	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-418	98	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-419	98	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+418	98	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+419	98	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 420	98	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 421	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 422	98	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 423	98	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-424	99	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-425	99	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+424	99	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+425	99	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 426	99	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 427	99	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 428	99	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 429	99	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-430	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-431	100	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+430	100	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+431	100	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 432	100	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 433	100	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 434	100	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 435	100	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-436	101	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-437	101	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+436	101	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+437	101	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 438	101	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 439	101	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 440	101	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 441	101	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-442	102	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-443	102	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+442	102	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+443	102	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 444	102	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 445	102	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 446	102	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 447	102	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-448	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-449	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+448	103	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+449	103	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 450	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 451	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 452	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 453	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-454	104	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-455	104	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+454	104	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+455	104	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 456	104	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 457	104	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 458	104	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 459	104	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-460	105	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-461	105	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+460	105	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+461	105	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 462	105	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 463	105	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 464	105	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 465	105	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-466	106	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-467	106	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+466	106	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+467	106	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 468	106	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 469	106	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 470	106	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 471	106	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-472	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-473	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+472	127	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+473	127	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 474	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 475	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 476	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 477	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-478	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-479	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+478	127	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+479	127	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 480	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 481	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 482	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 483	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-484	107	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-485	107	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+484	107	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+485	107	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 486	107	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 487	107	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 488	107	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 489	107	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-490	108	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-491	108	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+490	108	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+491	108	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 492	108	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 493	108	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 494	108	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 495	108	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-496	109	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-497	109	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+496	109	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+497	109	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 498	109	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 499	109	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 500	109	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 501	109	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-502	115	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-503	115	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+502	115	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+503	115	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 504	115	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 505	115	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 506	115	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 507	115	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-508	102	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-509	102	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+508	102	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+509	102	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 510	102	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 511	102	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 512	102	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 513	102	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-514	110	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-515	110	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+514	110	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+515	110	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 516	110	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 517	110	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 518	110	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 519	110	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-520	111	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-521	111	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+520	111	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+521	111	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 522	111	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 523	111	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 524	111	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 525	111	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-526	112	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-527	112	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+526	112	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+527	112	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 528	112	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 529	112	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 530	112	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 531	112	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-532	113	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-533	113	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+532	113	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+533	113	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 534	113	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 535	113	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 536	113	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 537	113	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-538	114	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-539	114	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+538	114	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+539	114	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 540	114	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 541	114	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 542	114	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 543	114	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-544	115	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-545	115	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+544	115	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+545	115	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 546	115	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 547	115	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 548	115	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 549	115	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-550	96	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-551	96	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+550	96	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+551	96	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 552	96	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 553	96	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 554	96	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 555	96	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-556	121	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-557	121	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+556	121	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+557	121	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 558	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 559	121	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 560	121	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 561	121	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-562	116	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-563	116	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+562	116	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+563	116	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 564	116	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 565	116	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 566	116	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 567	116	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-568	117	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-569	117	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+568	117	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+569	117	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 570	117	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 571	117	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 572	117	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 573	117	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-574	118	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-575	118	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+574	118	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+575	118	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 576	118	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 577	118	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 578	118	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 579	118	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-580	60	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-581	60	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+580	60	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+581	60	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 582	60	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 583	60	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 584	60	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 585	60	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-586	119	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-587	119	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+586	119	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+587	119	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 588	119	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 589	119	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 590	119	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 591	119	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-592	120	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-593	120	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+592	120	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+593	120	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 594	120	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 595	120	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 596	120	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 597	120	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-598	121	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-599	121	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+598	121	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+599	121	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 600	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 601	121	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 602	121	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 603	121	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-604	122	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-605	122	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+604	122	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+605	122	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 606	122	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 607	122	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 608	122	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 609	122	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-610	123	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-611	123	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+610	123	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+611	123	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 612	123	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 613	123	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 614	123	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 615	123	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-616	124	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-617	124	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+616	124	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+617	124	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 618	124	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 619	124	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 620	124	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 621	124	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-622	124	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-623	124	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+622	124	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+623	124	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 624	124	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 625	124	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 626	124	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 627	124	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-628	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-629	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+628	103	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+629	103	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 630	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 631	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 632	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 633	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-634	125	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-635	125	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+634	125	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+635	125	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 636	125	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 637	125	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 638	125	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 639	125	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-640	61	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-641	61	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+640	61	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+641	61	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 642	61	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 643	61	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 644	61	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 645	61	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-646	107	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-647	107	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+646	107	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+647	107	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 648	107	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 649	107	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 650	107	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 651	107	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-652	109	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-653	109	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+652	109	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+653	109	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 654	109	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 655	109	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 656	109	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 657	109	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-658	137	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-659	137	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+658	137	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+659	137	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 660	137	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 661	137	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 662	137	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 663	137	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-664	126	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-665	126	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+664	126	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+665	126	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 666	126	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 667	126	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 668	126	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 669	126	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-670	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-671	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+670	127	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+671	127	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 672	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 673	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 674	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 675	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-676	128	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-677	128	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+676	128	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+677	128	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 678	128	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 679	128	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 680	128	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 681	128	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-682	129	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-683	129	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+682	129	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+683	129	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 684	129	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 685	129	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 686	129	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 687	129	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-688	130	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-689	130	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+688	130	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+689	130	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 690	130	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 691	130	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 692	130	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 693	130	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-694	131	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-695	131	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+694	131	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+695	131	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 696	131	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 697	131	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 698	131	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 699	131	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-700	132	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-701	132	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+700	132	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+701	132	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 702	132	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 703	132	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 704	132	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 705	132	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-706	133	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-707	133	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+706	133	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+707	133	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 708	133	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 709	133	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 710	133	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 711	133	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-712	134	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-713	134	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+712	134	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+713	134	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 714	134	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 715	134	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 716	134	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 717	134	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-718	135	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-719	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+718	135	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+719	135	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 720	135	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 721	135	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 722	135	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 723	135	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-724	136	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-725	136	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+724	136	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+725	136	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 726	136	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 727	136	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 728	136	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 729	136	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-730	139	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-731	139	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+730	139	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+731	139	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 732	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 733	139	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 734	139	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 735	139	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-736	137	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-737	137	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+736	137	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+737	137	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 738	137	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 739	137	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 740	137	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 741	137	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-742	138	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-743	138	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+742	138	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+743	138	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 744	138	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 745	138	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 746	138	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 747	138	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-748	139	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-749	139	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+748	139	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+749	139	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 750	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 751	139	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 752	139	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 753	139	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-754	140	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-755	140	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+754	140	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+755	140	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 756	140	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 757	140	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 758	140	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 759	140	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-760	148	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-761	148	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+760	148	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+761	148	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 762	148	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 763	148	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 764	148	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 765	148	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-766	141	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-767	141	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+766	141	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+767	141	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 768	141	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 769	141	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 770	141	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 771	141	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-772	131	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-773	131	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+772	131	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+773	131	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 774	131	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 775	131	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 776	131	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 777	131	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-778	119	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-779	119	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+778	119	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+779	119	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 780	119	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 781	119	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 782	119	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 783	119	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-784	118	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-785	118	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+784	118	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+785	118	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 786	118	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 787	118	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 788	118	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 789	118	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-790	142	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-791	142	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+790	142	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+791	142	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 792	142	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 793	142	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 794	142	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 795	142	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-796	143	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-797	143	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+796	143	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+797	143	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 798	143	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 799	143	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 800	143	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 801	143	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-802	65	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-803	65	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+802	65	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+803	65	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 804	65	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 805	65	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 806	65	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 807	65	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-808	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-809	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+808	146	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+809	146	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 810	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 811	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 812	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 813	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-814	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-815	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+814	103	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+815	103	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 816	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 817	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 818	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 819	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-820	144	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-821	144	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+820	144	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+821	144	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 822	144	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 823	144	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 824	144	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 825	144	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-826	107	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-827	107	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+826	107	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+827	107	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 828	107	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 829	107	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 830	107	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 831	107	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-832	145	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-833	145	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+832	145	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+833	145	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 834	145	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 835	145	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 836	145	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 837	145	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-838	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-839	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+838	146	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+839	146	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 840	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 841	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 842	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 843	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-844	139	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-845	139	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+844	139	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+845	139	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 846	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 847	139	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 848	139	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 849	139	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-850	132	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-851	132	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+850	132	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+851	132	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 852	132	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 853	132	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 854	132	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 855	132	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-856	147	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-857	147	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+856	147	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+857	147	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 858	147	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 859	147	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 860	147	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 861	147	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-862	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-863	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+862	127	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+863	127	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 864	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 865	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 866	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 867	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-868	148	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-869	148	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+868	148	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+869	148	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 870	148	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 871	148	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 872	148	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 873	148	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-874	149	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-875	149	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+874	149	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+875	149	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 876	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 877	149	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 878	149	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 879	149	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-880	150	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-881	150	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+880	150	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+881	150	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 882	150	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 883	150	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 884	150	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 885	150	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-886	151	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-887	151	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+886	151	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+887	151	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 888	151	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 889	151	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 890	151	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 891	151	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-892	152	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-893	152	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+892	152	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+893	152	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 894	152	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 895	152	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 896	152	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 897	152	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-898	144	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-899	144	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+898	144	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+899	144	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 900	144	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 901	144	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 902	144	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 903	144	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-904	153	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-905	153	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+904	153	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+905	153	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 906	153	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 907	153	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 908	153	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 909	153	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-910	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-911	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+910	146	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+911	146	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 912	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 913	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 914	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 915	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-916	119	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-917	119	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+916	119	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+917	119	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 918	119	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 919	119	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 920	119	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 921	119	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-922	140	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-923	140	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+922	140	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+923	140	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 924	140	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 925	140	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 926	140	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 927	140	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-928	154	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-929	154	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+928	154	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+929	154	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 930	154	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 931	154	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 932	154	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 933	154	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-934	155	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-935	155	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+934	155	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+935	155	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 936	155	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 937	155	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 938	155	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 939	155	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-940	156	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-941	156	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+940	156	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+941	156	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 942	156	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 943	156	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 944	156	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 945	156	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-946	157	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-947	157	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+946	157	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+947	157	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 948	157	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 949	157	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 950	157	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 951	157	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-952	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-953	100	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+952	100	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+953	100	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 954	100	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 955	100	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 956	100	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 957	100	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-958	135	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-959	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+958	135	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+959	135	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 960	135	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 961	135	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 962	135	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 963	135	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-964	158	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-965	158	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+964	158	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+965	158	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 966	158	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 967	158	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 968	158	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 969	158	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-970	156	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-971	156	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+970	156	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+971	156	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 972	156	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 973	156	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 974	156	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 975	156	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-976	63	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-977	63	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+976	63	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+977	63	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 978	63	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 979	63	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 980	63	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 981	63	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-982	135	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-983	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+982	135	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+983	135	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 984	135	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 985	135	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 986	135	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 987	135	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-988	129	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-989	129	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+988	129	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+989	129	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 990	129	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 991	129	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 992	129	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 993	129	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-994	120	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-995	120	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+994	120	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+995	120	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 996	120	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 997	120	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 998	120	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 999	120	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1000	114	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1001	114	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1000	114	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1001	114	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1002	114	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1003	114	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1004	114	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1005	114	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1006	159	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1007	159	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1006	159	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1007	159	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1008	159	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1009	159	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1010	159	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1011	159	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1012	140	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1013	140	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1012	140	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1013	140	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1014	140	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1015	140	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1016	140	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1017	140	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1018	160	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1019	160	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1018	160	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1019	160	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1020	160	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1021	160	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1022	160	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1023	160	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1024	161	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1025	161	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1024	161	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1025	161	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1026	161	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1027	161	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1028	161	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1029	161	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1030	162	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1031	162	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1030	162	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1031	162	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1032	162	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1033	162	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1034	162	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1035	162	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1036	163	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1037	163	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1036	163	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1037	163	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1038	163	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1039	163	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1040	163	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1041	163	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1042	164	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1043	164	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1042	164	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1043	164	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1044	164	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1045	164	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1046	164	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1047	164	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1048	11	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1049	11	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1048	11	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1049	11	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1050	11	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1051	11	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1052	11	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1053	11	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1054	165	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1055	165	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1054	165	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1055	165	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1056	165	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1057	165	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1058	165	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1059	165	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1060	166	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1061	166	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1060	166	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1061	166	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1062	166	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1063	166	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1064	166	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1065	166	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1066	145	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1067	145	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1066	145	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1067	145	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1068	145	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1069	145	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1070	145	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1071	145	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1072	149	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1073	149	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1072	149	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1073	149	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1074	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1075	149	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1076	149	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1077	149	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1078	178	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1079	178	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1078	178	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1079	178	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1080	178	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1081	178	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1082	178	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1083	178	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1084	167	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1085	167	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1084	167	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1085	167	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1086	167	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1087	167	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1088	167	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1089	167	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1090	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1091	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1090	146	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1091	146	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1092	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1093	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1094	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1095	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1096	104	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1097	104	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1096	104	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1097	104	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1098	104	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1099	104	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1100	104	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1101	104	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1102	168	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1103	168	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1102	168	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1103	168	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1104	168	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1105	168	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1106	168	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1107	168	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1108	169	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1109	169	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1108	169	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1109	169	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1110	169	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1111	169	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1112	169	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1113	169	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1114	166	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1115	166	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1114	166	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1115	166	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1116	166	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1117	166	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1118	166	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1119	166	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1120	170	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1121	170	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1120	170	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1121	170	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1122	170	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1123	170	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1124	170	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1125	170	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1126	138	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1127	138	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1126	138	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1127	138	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1128	138	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1129	138	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1130	138	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1131	138	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1132	171	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1133	171	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1132	171	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1133	171	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1134	171	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1135	171	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1136	171	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1137	171	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1138	172	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1139	172	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1138	172	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1139	172	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1140	172	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1141	172	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1142	172	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1143	172	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1144	173	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1145	173	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1144	173	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1145	173	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1146	173	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1147	173	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1148	173	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1149	173	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1150	97	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1151	97	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1150	97	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1151	97	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1152	97	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1153	97	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1154	97	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1155	97	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1156	174	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1157	174	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1156	174	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1157	174	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1158	174	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1159	174	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1160	174	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1161	174	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1162	122	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1163	122	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1162	122	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1163	122	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1164	122	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1165	122	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1166	122	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1167	122	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1168	121	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1169	121	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1168	121	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1169	121	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1170	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1171	121	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1172	121	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1173	121	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1174	174	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1175	174	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1174	174	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1175	174	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1176	174	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1177	174	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1178	174	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1179	174	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1180	141	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1181	141	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1180	141	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1181	141	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1182	141	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1183	141	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1184	141	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1185	141	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1186	175	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1187	175	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1186	175	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1187	175	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1188	175	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1189	175	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1190	175	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1191	175	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1192	112	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1193	112	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1192	112	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1193	112	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1194	112	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1195	112	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1196	112	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1197	112	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1198	125	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1199	125	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1198	125	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1199	125	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1200	125	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1201	125	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1202	125	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1203	125	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1204	176	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1205	176	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1204	176	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1205	176	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1206	176	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1207	176	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1208	176	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1209	176	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1210	177	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1211	177	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1210	177	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1211	177	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1212	177	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1213	177	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1214	177	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1215	177	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1216	149	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1217	149	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1216	149	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1217	149	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1218	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1219	149	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1220	149	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1221	149	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1222	178	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1223	178	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1222	178	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1223	178	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1224	178	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1225	178	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1226	178	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1227	178	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1228	98	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1229	98	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1228	98	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1229	98	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1230	98	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1231	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1232	98	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1233	98	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1234	179	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1235	179	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1234	179	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1235	179	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1236	179	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1237	179	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1238	179	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1239	179	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1240	165	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1241	165	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1240	165	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1241	165	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1242	165	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1243	165	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1244	165	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1245	165	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1246	171	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1247	171	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1246	171	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1247	171	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1248	171	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1249	171	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1250	171	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1251	171	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1252	98	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1253	98	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1252	98	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1253	98	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1254	98	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1255	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1256	98	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1257	98	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1258	104	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1259	104	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1258	104	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1259	104	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1260	104	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1261	104	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1262	104	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1263	104	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1264	180	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1265	180	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1264	180	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1265	180	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1266	180	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1267	180	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1268	180	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1269	180	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1270	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1271	100	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1270	100	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1271	100	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1272	100	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1273	100	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1274	100	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1275	100	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1276	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1277	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1276	103	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1277	103	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1278	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1279	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1280	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1281	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1282	49	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1283	49	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1282	49	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1283	49	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1284	49	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1285	49	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1286	49	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1287	49	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1288	59	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1289	59	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1288	59	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1289	59	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1290	59	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1291	59	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1292	59	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1293	59	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1294	59	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1295	59	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1294	59	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1295	59	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1296	59	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1297	59	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1298	59	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1299	59	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1300	77	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1301	77	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1300	77	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1301	77	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1302	77	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1303	77	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1304	77	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1305	77	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1306	41	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1307	41	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1306	41	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1307	41	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1308	41	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1309	41	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1310	41	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1311	41	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1312	90	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1313	90	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1312	90	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1313	90	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1314	90	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1315	90	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1316	90	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1317	90	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1318	90	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1319	90	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1318	90	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1319	90	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1320	90	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1321	90	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1322	90	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1323	90	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1324	57	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1325	57	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1324	57	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1325	57	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1326	57	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1327	57	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1328	57	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1329	57	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1330	53	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1331	53	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1330	53	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1331	53	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1332	53	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1333	53	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1334	53	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1335	53	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1336	20	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1337	20	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1336	20	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1337	20	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1338	20	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1339	20	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1340	20	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1341	20	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1342	24	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1343	24	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1342	24	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1343	24	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1344	24	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1345	24	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1346	24	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1347	24	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1348	93	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1349	93	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1348	93	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1349	93	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1350	93	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1351	93	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1352	93	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1353	93	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1354	31	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1355	31	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1354	31	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1355	31	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1356	31	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1357	31	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1358	31	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1359	31	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1360	50	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1361	50	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1360	50	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1361	50	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1362	50	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1363	50	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1364	50	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1365	50	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1366	87	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1367	87	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1366	87	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1367	87	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1368	87	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1369	87	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1370	87	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1371	87	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1372	87	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1373	87	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1372	87	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1373	87	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1374	87	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1375	87	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1376	87	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1377	87	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1378	181	\N	196	\N	\N	Estad├¡a de habitaci├│n	568.09	4	2272.36	0.00	0.00	2272.36
+1378	181	\N	196	\N	\N	Estadía de habitación	568.09	4	2272.36	0.00	0.00	2272.36
 1379	181	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 1380	181	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
 1381	181	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1382	182	\N	809	\N	\N	Estad├¡a de habitaci├│n	377.14	4	1508.56	0.00	0.00	1508.56
+1382	182	\N	809	\N	\N	Estadía de habitación	377.14	4	1508.56	0.00	0.00	1508.56
 1383	182	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-1384	182	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1385	182	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
-1386	183	\N	570	\N	\N	Estad├¡a de habitaci├│n	224.96	4	899.84	0.00	0.00	899.84
+1384	182	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1385	182	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
+1386	183	\N	570	\N	\N	Estadía de habitación	224.96	4	899.84	0.00	0.00	899.84
 1387	183	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 1388	183	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
-1389	183	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-1390	184	\N	198	\N	\N	Estad├¡a de habitaci├│n	473.03	2	946.06	0.00	0.00	946.06
-1391	184	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1389	183	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1390	184	\N	198	\N	\N	Estadía de habitación	473.03	2	946.06	0.00	0.00	946.06
+1391	184	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 1392	184	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
 1393	184	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-1394	185	\N	547	\N	\N	Estad├¡a de habitaci├│n	612.81	6	3676.86	0.00	0.00	3676.86
-1395	185	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1394	185	\N	547	\N	\N	Estadía de habitación	612.81	6	3676.86	0.00	0.00	3676.86
+1395	185	4	\N	\N	\N	Servicio a la Habitación	10.00	1	10.00	0.00	0.00	10.00
 1396	185	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
-1397	185	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-1398	186	\N	729	\N	\N	Estad├¡a de habitaci├│n	696.78	2	1393.56	0.00	0.00	1393.56
+1397	185	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1398	186	\N	729	\N	\N	Estadía de habitación	696.78	2	1393.56	0.00	0.00	1393.56
 1399	186	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 1400	186	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
 1401	186	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
-1402	187	\N	97	\N	\N	Estad├¡a de habitaci├│n	316.30	4	1265.20	0.00	0.00	1265.20
+1402	187	\N	97	\N	\N	Estadía de habitación	316.30	4	1265.20	0.00	0.00	1265.20
 1403	187	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
 1404	187	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
 1405	187	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
-1406	188	\N	151	\N	\N	Estad├¡a de habitaci├│n	110.54	3	331.62	0.00	0.00	331.62
-1407	188	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1406	188	\N	151	\N	\N	Estadía de habitación	110.54	3	331.62	0.00	0.00	331.62
+1407	188	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
 1408	188	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
 1409	188	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
-1410	189	\N	121	\N	\N	Estad├¡a de habitaci├│n	694.55	5	3472.75	0.00	0.00	3472.75
+1410	189	\N	121	\N	\N	Estadía de habitación	694.55	5	3472.75	0.00	0.00	3472.75
 1411	189	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
 1412	189	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
-1413	189	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-1414	190	\N	349	\N	\N	Estad├¡a de habitaci├│n	146.04	5	730.20	0.00	0.00	730.20
-1415	190	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
-1416	190	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
-1417	190	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1413	189	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1414	190	\N	349	\N	\N	Estadía de habitación	146.04	5	730.20	0.00	0.00	730.20
+1415	190	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1416	190	9	\N	\N	\N	Cena Romántica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1417	190	6	\N	\N	\N	Lavandería (por libra)	41.00	1	41.00	0.00	0.00	41.00
 \.
 
 
@@ -8921,8 +8921,8 @@ COPY public.habitacion (id_habitacion, id_hotel, nivel, numero_habitacion, id_ti
 
 COPY public.hotel (id_hotel, nombre, direccion, niveles_edificios, calificacion, descripcion) FROM stdin;
 1	Hotel Costa Azul	Playa El Tunco, La Libertad	4	3.2	Resort frente a la playa con piscina infinita
-2	Mirador San Salvador	Colonia Escal??n, San Salvador	10	3.1	Hotel de lujo con vista panor??mica a la ciudad
-3	Posada del Volc??n	Parque Nacional El Boquer??n	2	3.2	Caba??as r??sticas inmersas en la naturaleza
+2	Mirador San Salvador	Colonia Escalón, San Salvador	10	3.1	Hotel de lujo con vista panorámica a la ciudad
+3	Posada del Volcán	Parque Nacional El Boquerón	2	3.2	Cabañas rústicas inmersas en la naturaleza
 \.
 
 
@@ -11156,12 +11156,12 @@ COPY public.servicio (id_servicio, tipo_servicio, precio) FROM stdin;
 1	Desayuno Buffet	15.00
 2	Masaje Relajante 60 min	45.00
 3	Transporte Aeropuerto	35.00
-4	Servicio a la Habitaci??n	10.00
+4	Servicio a la Habitación	10.00
 5	Tour Guiado Volcanes	60.00
 7	Alquiler de Bicicleta	12.00
 8	Clase de Surf Privada	25.00
-9	Cena Rom??ntica en Playa	80.00
-6	Lavander??a (por libra)	41.00
+9	Cena Romántica en Playa	80.00
+6	Lavandería (por libra)	41.00
 10	Estacionamiento Valet	32.00
 \.
 
@@ -11178,11 +11178,11 @@ COPY public.tipo_comodidad (id_tipo_comodidad, tipo_comodidad) FROM stdin;
 3	Smart TV 55 Pulgadas
 4	Mini Bar Premium
 5	Jacuzzi Privado
-6	Balc??n con Vista al Mar
+6	Balcón con Vista al Mar
 7	Caja Fuerte Digital
-8	Cafetera de C??psulas
-9	Escritorio de Trabajo Ergon??mico
-10	Tina de Ba??o de Inmersi??n
+8	Cafetera de Cápsulas
+9	Escritorio de Trabajo Ergonómico
+10	Tina de Baño de Inmersión
 \.
 
 
@@ -11196,7 +11196,7 @@ COPY public.tipo_empleado (id_tipo_empleado, tipo_empleado) FROM stdin;
 1	Recepcionista
 2	Gerente General
 3	Personal de Limpieza
-4	T??cnico de Mantenimiento
+4	Técnico de Mantenimiento
 5	Botones / Maletero
 6	Chef Ejecutivo
 7	Mesero / Camarero
@@ -11213,15 +11213,15 @@ COPY public.tipo_empleado (id_tipo_empleado, tipo_empleado) FROM stdin;
 --
 
 COPY public.tipo_habitacion (id_tipo_habitacion, tipo_habitacion) FROM stdin;
-1	Individual Est??ndar
-2	Doble Est??ndar
+1	Individual Estándar
+2	Doble Estándar
 3	Doble Superior
 4	Suite Junior
 5	Suite Ejecutiva
 6	Suite Presidencial
-7	Habitaci??n Familiar
+7	Habitación Familiar
 8	Estudio con Cocina Equipada
-9	Habitaci??n Accesible (Ley ADA)
+9	Habitación Accesible (Ley ADA)
 10	Penthouse
 \.
 
