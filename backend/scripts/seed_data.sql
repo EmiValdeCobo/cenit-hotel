@@ -1,42 +1,785 @@
+-- PREPENDED BY FIX SCRIPT
+SET session_replication_role = 'replica';
+
+TRUNCATE TABLE 
+    public.detalle_factura,
+    public.factura,
+    public.consumo_servicio,
+    public.estadia,
+    public.detalle_reservacion,
+    public.reservacion,
+    public.resenia,
+    public.huesped,
+    public.empleado,
+    public.habitacion,
+    public.comodidad_tipo_habitacion,
+    public.tipo_habitacion,
+    public.tipo_comodidad,
+    public.tipo_empleado,
+    public.servicio,
+    public.hotel,
+    public.descuento,
+    public.aumento_costos
+    CASCADE;
+
+--
+-- PostgreSQL database dump
+--
+
+\restrict DrF9YcJq10JHFoatMdUQRUb7WLoRMhuWfhjhO526eocQNwsWGNZbcGGJPlO8ecc
+
+-- Dumped from database version 18.4
+-- Dumped by pg_dump version 18.4
+
+-- Started on 2026-06-20 23:23:39
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 290 (class 1255 OID 31025)
+-- Name: actualizar_calificacion_hotel(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
 CREATE FUNCTION public.actualizar_calificacion_hotel() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+DECLARE
+    v_id_hotel bigint;
+    v_nueva_calificacion numeric(2,1);
+BEGIN 
+    -- 1. Se obtiene el ID del hotel relacionado a la nueva rese├▒a
+    -- LIMIT 1 por si la reservaci├│n tiene m├║ltiples habitaciones para el mismo hotel
+    SELECT hab.id_hotel INTO v_id_hotel
+    FROM estadia est
+    INNER JOIN detalle_reservacion det ON est.id_reservacion = det.id_reservacion
+    INNER JOIN habitacion hab ON det.id_habitacion = hab.id_habitacion
+    WHERE est.id_estadia = NEW.id_estadia
+    LIMIT 1;
+    
+    -- 2. Calcula el promedio de calificaci├│n para ese hotel
+    -- ROUND a 1 decimal para que coincida con la calificacion de la tabla
+    SELECT ROUND(AVG(r.calificacion), 1) INTO v_nueva_calificacion
+    FROM resenia r
+    INNER JOIN estadia est ON r.id_estadia = est.id_estadia
+    INNER JOIN detalle_reservacion det ON est.id_reservacion = det.id_reservacion
+    INNER JOIN habitacion hab ON det.id_habitacion = hab.id_habitacion
+    WHERE hab.id_hotel = v_id_hotel;
+    
+    -- 3. Actualiza la tabla hotel con el nuevo promedio
+    UPDATE hotel
+    SET calificacion = v_nueva_calificacion
+    WHERE id_hotel = v_id_hotel;
 
+    -- Como es un trigger AFTER para INSERT/UPDATE, devolvemos NEW
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_calificacion_hotel() OWNER TO postgres;
+
+--
+-- TOC entry 292 (class 1255 OID 31528)
+-- Name: fn_actualizar_calificacion_hotel(); Type: FUNCTION; Schema: public; Owner: postgres
+--
 
 CREATE FUNCTION public.fn_actualizar_calificacion_hotel() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+DECLARE
+    v_id_hotel bigint;
+    v_nueva_calificacion numeric(2,1);
+BEGIN 
+    -- Buscamos si ya existe otra reseña registrada para esta misma estadía/reservación
+    IF EXISTS (
+        SELECT 1 
+        FROM resenia 
+        WHERE id_estadia = NEW.id_estadia 
+          -- Esto evita que marque error si el huésped está actualizando su propia reseña
+          AND id_resenia IS DISTINCT FROM NEW.id_resenia
+    ) THEN
+        -- Si encuentra una reseña previa, aborta la operación
+        RAISE EXCEPTION 'Ya existe una calificación ingresada para la estadía/reservación %.', NEW.id_estadia;
+    END IF;
 
+    -- Si no hay choque, continúa normalmente con el cálculo
+    
+    -- 1. Obtener el ID del hotel relacionado a la nueva reseña
+    SELECT hab.id_hotel INTO v_id_hotel
+    FROM estadia est
+    INNER JOIN detalle_reservacion det ON est.id_reservacion = det.id_reservacion
+    INNER JOIN habitacion hab ON det.id_habitacion = hab.id_habitacion
+    WHERE est.id_estadia = NEW.id_estadia
+    LIMIT 1;
+    
+    -- 2. Calcular el promedio de calificación para ese hotel
+    SELECT ROUND(AVG(r.calificacion), 1) INTO v_nueva_calificacion
+    FROM resenia r
+    INNER JOIN estadia est ON r.id_estadia = est.id_estadia
+    INNER JOIN detalle_reservacion det ON est.id_reservacion = det.id_reservacion
+    INNER JOIN habitacion hab ON det.id_habitacion = hab.id_habitacion
+    WHERE hab.id_hotel = v_id_hotel;
+    
+    -- 3. Actualizar la tabla hotel con el nuevo promedio
+    UPDATE hotel
+    SET calificacion = v_nueva_calificacion
+    WHERE id_hotel = v_id_hotel;
+
+    -- Devolver NEW para que la operación se complete con éxito
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.fn_actualizar_calificacion_hotel() OWNER TO postgres;
+
+--
+-- TOC entry 295 (class 1255 OID 31534)
+-- Name: fn_buscar_habitaciones_disponibles(date, date, bigint); Type: FUNCTION; Schema: public; Owner: postgres
+--
 
 CREATE FUNCTION public.fn_buscar_habitaciones_disponibles(p_fecha_entrada date, p_fecha_salida date, p_id_tipo_habitacion bigint) RETURNS TABLE(id_habitacion_libre bigint, nombre_hotel_pertenece character varying, numero_habitacion_libre integer, tipo_habitacion_libre character varying, precio_habitacion numeric)
     LANGUAGE plpgsql
     AS $$
+begin
+    return query
+    select 
+        h.id_habitacion, 
+        ho.nombre,
+        h.numero_habitacion, 
+        th.tipo_habitacion,
+        h.precio
+    from habitacion h
+    inner join hotel ho on h.id_hotel = ho.id_hotel 
+    inner join tipo_habitacion th on h.id_tipo_habitacion = th.id_tipo_habitacion 
+    where h.id_tipo_habitacion = p_id_tipo_habitacion
+      and h.estado = 'DISPONIBLE'
+      and h.id_habitacion not in (
+          select dr.id_habitacion 
+          from detalle_reservacion dr
+          join reservacion r on dr.id_reservacion = r.id_reservacion
+          where r.estado in ('PENDIENTE', 'CONFIRMADA')
+            and not (p_fecha_salida <= dr.fecha_entrada or p_fecha_entrada >= dr.fecha_salida)
+      );
+end;
+$$;
 
+
+ALTER FUNCTION public.fn_buscar_habitaciones_disponibles(p_fecha_entrada date, p_fecha_salida date, p_id_tipo_habitacion bigint) OWNER TO postgres;
+
+--
+-- TOC entry 294 (class 1255 OID 31532)
+-- Name: fn_generar_factura_checkout(); Type: FUNCTION; Schema: public; Owner: postgres
+--
 
 CREATE FUNCTION public.fn_generar_factura_checkout() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+DECLARE
+    -- Variables para el procedimiento
+    v_id_empleado BIGINT;
+    v_metodo_pago VARCHAR := 'EFECTIVO'; -- Valor temporal por defecto
+BEGIN
+    -- se valida que el checkout pasó de estar vacío (NULL) a tener una fecha
+    IF OLD.checkout IS NULL AND NEW.checkout IS NOT NULL THEN
+        
+   		--SELECT para obtener el id_empleado desde la tabla reservacion
+		select id_empleado into v_id_empleado from reservacion where id_reservacion = NEW.id_reservacion;
+        -- se manda a llamar el procedimiento para calcular el detalle de la factura
+        CALL calcular_total_factura(NEW.id_estadia, v_id_empleado, v_metodo_pago);
+        
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
 
+
+ALTER FUNCTION public.fn_generar_factura_checkout() OWNER TO postgres;
+
+--
+-- TOC entry 278 (class 1255 OID 31526)
+-- Name: fn_validar_disponibilidad_habitacion(); Type: FUNCTION; Schema: public; Owner: postgres
+--
 
 CREATE FUNCTION public.fn_validar_disponibilidad_habitacion() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+begin
+    -- buscamos si ya existe una reserva activa que choque con las fechas nuevas
+    if exists (
+        select 1 
+        from public.detalle_reservacion dr
+        inner join public.reservacion r on dr.id_reservacion = r.id_reservacion
+        where dr.id_habitacion = new.id_habitacion 
+          and dr.fecha_entrada < new.fecha_salida 
+          and dr.fecha_salida > new.fecha_entrada
+          and r.estado not in ('cancelada', 'rechazada')	
+          and dr.id_detalle_reservacion is distinct from new.id_detalle_reservacion
+    ) then
+        -- si encuentra un choque con una reserva válida, aborta la operación
+        raise exception 'la habitación % ya se encuentra reservada en esas fechas.', new.id_habitacion;
+    end if;
 
+    -- si no hay choques, deja pasar los datos 
+    return new;
+end;
+$$;
+
+
+ALTER FUNCTION public.fn_validar_disponibilidad_habitacion() OWNER TO postgres;
+
+--
+-- TOC entry 296 (class 1255 OID 31535)
+-- Name: fn_validar_nivel_habitacion(); Type: FUNCTION; Schema: public; Owner: postgres
+--
 
 CREATE FUNCTION public.fn_validar_nivel_habitacion() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+declare nivel_hotel int;
+begin 
+	-- se guarda el nivel del hotel de la habitacion en una variable
+	select niveles_edificios into nivel_hotel
+	from hotel where id_hotel = NEW.id_hotel;
+	-- se valida si el nivel ingresado es mayor al del hotel
+	if NEW.nivel > nivel_hotel then
+		raise exception 'Operación cancelada: el nivel ingresado (%) es mayor al del hotel (%).', NEW.nivel, nivel_hotel;
+	end if;
+	
+	return new;
+end;
+$$;
 
+
+ALTER FUNCTION public.fn_validar_nivel_habitacion() OWNER TO postgres;
+
+--
+-- TOC entry 293 (class 1255 OID 31530)
+-- Name: sp_calcular_total_factura(bigint, bigint, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
 
 CREATE PROCEDURE public.sp_calcular_total_factura(IN p_id_estadia bigint, IN p_id_empleado bigint, IN p_metodo_pago character varying)
     LANGUAGE plpgsql
     AS $$
+DECLARE
+    -- Variable para guardar el total a pagar de la factura
+    v_total_a_pagar NUMERIC(10,2) := 0;
 
+    -- Variable para verificar si la reservacion existe
+    v_existe BOOLEAN;
+
+    -- Variable para guardar el id del huesped
+    v_id_huesped BIGINT;
+
+    -- Variable para guardar el id de la factura creada
+    v_id_factura BIGINT;
+
+    -- Variable para guardar el select de las habitaciones de la estadia
+    habitacion_estadia RECORD;
+
+    -- Variable para guardar los dias sin temporada alta de la estadia
+    v_dias_normal INT := 0;
+	
+    -- Variable para guardar el subtotal del detalle de factura
+    v_subtotal NUMERIC(10,2) := 0;
+
+    -- Variable para guardar el total del detalle de factura
+    v_total NUMERIC(10,2) := 0;
+
+    -- Variable para guardar el select de los servicios consumidos
+    servicio_estadia RECORD;
+
+    -- Variable para guardar el monto del descuento del detalle de factura
+    v_monto_descuento NUMERIC(10,2) := 0;
+	
+	-- variable para guardar el porcentaje del descuento
+	v_porcentaje_descuento NUMERIC(10,2) := 0;
+
+    -- Variable para guardar el id del descuento
+    v_id_descuento BIGINT ;
+	
+    -- Variable para guardar el monto del aumento
+    v_monto_aumento NUMERIC(10,2) := 0;
+
+    -- Variable para guardar el porcentaje total de aumento
+    v_porcentaje_aumento NUMERIC(10,2) := 0;
+
+    -- Variable para guardar el id del aumento por temporada
+    v_id_aumento_costo BIGINT;
+
+    -- Variable para guardar el select de la temporada activa (para los aumentos del precio)
+    aumento_temporada RECORD;
+	
+BEGIN
+    -- Se valida si la estadia existe
+    SELECT EXISTS (
+        SELECT 1
+        FROM estadia
+        WHERE id_estadia = p_id_estadia
+    )
+    INTO v_existe;
+
+    -- Si no existe, se muestra un mensaje de error
+    IF NOT v_existe THEN
+        RAISE EXCEPTION 'La estadia con ID % no existe en la base de datos.', p_id_estadia;
+    END IF;
+
+    -- Se guarda el id del huesped en la variable global
+    SELECT
+        r.id_huesped
+	INTO v_id_huesped
+    FROM estadia e
+    JOIN reservacion r
+        ON e.id_reservacion = r.id_reservacion
+    WHERE e.id_estadia = p_id_estadia;
+
+    -- Se inserta la factura en la tabla con los campos obtenidos
+    INSERT INTO factura (
+        id_empleado,
+        id_huesped,
+        id_estadia,
+        metodo_pago,
+        total_a_pagar
+    )
+    VALUES (
+        p_id_empleado,
+        V_id_huesped,
+        p_id_estadia,
+        p_metodo_pago,
+        0
+    )
+    RETURNING id_factura
+    INTO v_id_factura;
+    -- Se recorren todas las habitaciones sobre esa estadia
+    FOR habitacion_estadia IN
+        SELECT
+            dr.id_habitacion,
+            h.descripcion,
+            h.precio,
+            dr.fecha_entrada,
+            dr.fecha_salida
+        FROM estadia e
+        JOIN reservacion r
+            ON e.id_reservacion = r.id_reservacion
+        JOIN detalle_reservacion dr
+            ON r.id_reservacion = dr.id_reservacion
+        JOIN habitacion h
+            ON dr.id_habitacion = h.id_habitacion
+        WHERE e.id_estadia = p_id_estadia
+    LOOP
+        -- Se calculan todos los dias de la estadia
+        v_dias_normal := habitacion_estadia.fecha_salida - habitacion_estadia.fecha_entrada;
+			
+		-- se guarda el porcentaje del descuento en base a los dias totales de la estadia
+	    SELECT d.id_descuento,
+	           d.porcentaje_descuento
+	    INTO v_id_descuento,
+	    v_porcentaje_descuento
+		FROM descuento d
+	    WHERE d.cant_dia_hospedado <= v_dias_normal
+	    ORDER BY d.cant_dia_hospedado DESC
+	    LIMIT 1;
+			
+		-- Se recorren todos los registros de las temporadas activas, devuelve el nombre de la temporada, 
+		-- los dias que coinciden con las fechas de la estadia y el porcentaje de aumento respectivo
+    	FOR aumento_temporada IN
+			SELECT
+				id_aumento_costo,
+			    nombre_temporada,
+			    COALESCE(UPPER(rango_temporada * rango_estadia)- LOWER(rango_temporada * rango_estadia),0) AS dias_coincidentes,
+			    porcentaje_aumento
+			FROM (
+			    SELECT
+					ac.id_aumento_costo,
+			        daterange(ac.fecha_inicio, ac.fecha_fin, '[]') AS rango_temporada,
+			        ac.nombre_temporada,
+			        ac.porcentaje_aumento,
+			        daterange(habitacion_estadia.fecha_entrada, habitacion_estadia.fecha_salida, '[]') AS rango_estadia
+			    FROM aumento_costos ac
+			    WHERE ac.activado = TRUE
+			) AS subconsulta
+			WHERE rango_temporada && rango_estadia
+		LOOP
+			-- se calcula el subtotal (dias que coinciden * precio original de la habitacion)
+			v_subtotal := ROUND(aumento_temporada.dias_coincidentes * habitacion_estadia.precio, 2);
+			-- se calcula el monto aumentado (subtotal * porcentaje aumento / 100)
+			v_monto_aumento := round((v_subtotal * aumento_temporada.porcentaje_aumento / 100),2);
+			-- se calcula el total sumando el subtotal con el monto aumentado
+			v_total := v_subtotal + v_monto_aumento;
+			-- se restan los dias de temporada alta a los dias totales de la estadia (para aplicar descuento despues a esos dias)
+			v_dias_normal := v_dias_normal - aumento_temporada.dias_coincidentes;
+			-- Se inserta el detalle de la factura con la informacion de la habitacion
+	        -- En este caso el campo "cantidad" hace referencia a los dias de la estadia que estan en temporada alta
+	        INSERT INTO detalle_factura (
+	            id_factura,
+	            id_habitacion,
+				id_aumento_costo,
+	            concepto,
+	            precio_unitario,
+	            cantidad,
+	            subtotal,
+				monto_aumento,
+	            precio_total
+	        )
+	        VALUES (
+	            v_id_factura,
+	            habitacion_estadia.id_habitacion,
+				aumento_temporada.id_aumento_costo,
+				-- se concatena la descripcion de la habitacion con la temporada actual
+	            concat(habitacion_estadia.descripcion, ' - ', aumento_temporada.nombre_temporada),
+	            habitacion_estadia.precio,
+	            aumento_temporada.dias_coincidentes,
+	            v_subtotal,
+				v_monto_aumento,
+	            v_total
+	        );	
+
+		END LOOP;
+		
+		if v_dias_normal > 0 then
+			-- Se calcula el subtotal (dias * precio habitacion)
+	        v_subtotal := ROUND(v_dias_normal * habitacion_estadia.precio, 2);
+			
+			-- se calcula el monto a descontar 
+			v_monto_descuento := v_subtotal * (v_porcentaje_descuento / 100);
+
+			-- se calcula el total (subtotal - monto a descontar)
+	        v_total := v_subtotal - v_monto_descuento;
+			
+	        -- Se inserta el detalle de la factura con la informacion de la habitacion
+	        -- En este caso el campo "cantidad" hace referencia a los dias de la estadia
+	        INSERT INTO detalle_factura (
+	            id_factura,
+	            id_habitacion,
+				id_descuento,
+	            concepto,
+	            precio_unitario,
+	            cantidad,
+	            subtotal,
+				monto_descuento,
+	            precio_total
+	        )
+	        VALUES (
+	            v_id_factura,
+	            habitacion_estadia.id_habitacion,
+				v_id_descuento,
+	            habitacion_estadia.descripcion,
+	            habitacion_estadia.precio,
+	            v_dias_normal,
+	            v_subtotal,
+				v_monto_descuento,
+	            v_total
+	        );
+
+		end if;
+
+    END LOOP;
+
+    -- Se recorren todos los servicios que se consumieron por estadia
+    FOR servicio_estadia IN
+        SELECT
+			cs.id_servicio,
+            cs.id_estadia,
+            s.tipo_servicio,
+            s.precio,
+            COUNT(cs.id_servicio) cantidad
+        FROM consumo_servicio cs
+        JOIN estadia e
+            ON cs.id_estadia = e.id_estadia
+        JOIN servicio s
+            ON cs.id_servicio = s.id_servicio
+        GROUP BY
+            cs.id_servicio,
+            cs.id_estadia,
+            s.tipo_servicio,
+            s.precio
+        HAVING cs.id_estadia = p_id_estadia
+    LOOP
+        -- Se calcula el subtotal multiplicando el precio por la cantidad de veces que se consumió ese servicio
+        v_subtotal = ROUND(servicio_estadia.precio * servicio_estadia.cantidad, 2);
+        v_total = v_subtotal;
+
+        INSERT INTO detalle_factura (
+            id_factura,
+            id_servicio,
+            concepto,
+            precio_unitario,
+            cantidad,
+            subtotal,
+            precio_total
+        )
+        VALUES (
+            v_id_factura,
+            servicio_estadia.id_servicio,
+            servicio_estadia.tipo_servicio,
+            servicio_estadia.precio,
+            servicio_estadia.cantidad,
+            v_subtotal,
+            v_total
+        );
+    END LOOP;
+
+    -- Se calcula el total a pagar sumando todos los totales de cada detalle de factura
+    SELECT SUM(precio_total) 
+	INTO v_total_a_pagar 
+	FROM detalle_factura 
+	WHERE id_factura = v_id_factura;
+
+    -- Se actualiza la tabla factura con el total a pagar
+    UPDATE factura
+    SET total_a_pagar = v_total_a_pagar
+    WHERE id_factura = v_id_factura;
+END;
+$$;
+
+
+ALTER PROCEDURE public.sp_calcular_total_factura(IN p_id_estadia bigint, IN p_id_empleado bigint, IN p_metodo_pago character varying) OWNER TO postgres;
+
+--
+-- TOC entry 291 (class 1255 OID 31026)
+-- Name: validar_disponibilidad_habitacion(); Type: FUNCTION; Schema: public; Owner: postgres
+--
 
 CREATE FUNCTION public.validar_disponibilidad_habitacion() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+BEGIN
+    -- Buscamos si ya existe una reserva que choque con las fechas nuevas
+    IF EXISTS (
+        SELECT 1 
+        FROM detalle_reservacion 
+        WHERE id_habitacion = NEW.id_habitacion 
+          -- Esta es la l├│gica matem├ítica para detectar si dos rangos de fecha se cruzan
+          AND fecha_entrada < NEW.fecha_salida 
+          AND fecha_salida > NEW.fecha_entrada
+          -- Esto evita que marque error si estamos actualizando (UPDATE) la misma reserva
+          AND id_detalle_reservacion IS DISTINCT FROM NEW.id_detalle_reservacion
+    ) THEN
+        -- Si encuentra un choque, aborta la operaci├│n y lanza este mensaje
+        RAISE EXCEPTION 'La habitaci├│n % ya est├í reservada en esas fechas.', NEW.id_habitacion;
+    END IF;
 
+    -- Si no hay choques, deja pasar los datos (retorna NEW)
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.validar_disponibilidad_habitacion() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 219 (class 1259 OID 31027)
+-- Name: aumento_costos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.aumento_costos (
+    id_aumento_costo bigint NOT NULL,
+    porcentaje_aumento numeric(5,2) NOT NULL,
+    fecha_inicio date NOT NULL,
+    fecha_fin date NOT NULL,
+    nombre_temporada character varying(100),
+    activado boolean DEFAULT true,
+    CONSTRAINT ck_fecha_inicio CHECK ((fecha_inicio < fecha_fin)),
+    CONSTRAINT ck_porcentaje_aumento CHECK ((porcentaje_aumento >= (0)::numeric))
+);
+
+
+ALTER TABLE public.aumento_costos OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 31037)
+-- Name: aumento_costos_id_aumento_costo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.aumento_costos ALTER COLUMN id_aumento_costo ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.aumento_costos_id_aumento_costo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 221 (class 1259 OID 31038)
+-- Name: comodidad_tipo_habitacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.comodidad_tipo_habitacion (
+    id_comodidad_habitacion bigint NOT NULL,
+    id_tipo_habitacion bigint NOT NULL,
+    id_tipo_comodidad bigint NOT NULL,
+    detalle text NOT NULL
+);
+
+
+ALTER TABLE public.comodidad_tipo_habitacion OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 31047)
+-- Name: comodidad_tipo_habitacion_id_comodidad_habitacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.comodidad_tipo_habitacion ALTER COLUMN id_comodidad_habitacion ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.comodidad_tipo_habitacion_id_comodidad_habitacion_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 223 (class 1259 OID 31048)
+-- Name: consumo_servicio; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.consumo_servicio (
+    id_consumo_servicio bigint NOT NULL,
+    id_servicio bigint NOT NULL,
+    id_habitacion bigint NOT NULL,
+    id_estadia bigint NOT NULL,
+    hora_consumo timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.consumo_servicio OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 31057)
+-- Name: consumo_servicio_id_consumo_servicio_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.consumo_servicio ALTER COLUMN id_consumo_servicio ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.consumo_servicio_id_consumo_servicio_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 225 (class 1259 OID 31058)
+-- Name: detalle_reservacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.detalle_reservacion (
+    id_detalle_reservacion bigint NOT NULL,
+    id_reservacion bigint NOT NULL,
+    id_habitacion bigint NOT NULL,
+    cant_huespedes integer NOT NULL,
+    fecha_entrada date NOT NULL,
+    fecha_salida date NOT NULL,
+    CONSTRAINT ck_cant_huespedes_detalle CHECK ((cant_huespedes > 0)),
+    CONSTRAINT ck_fecha_entrada CHECK ((fecha_entrada < fecha_salida))
+);
+
+
+ALTER TABLE public.detalle_reservacion OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 31069)
+-- Name: estadia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.estadia (
+    id_estadia bigint NOT NULL,
+    id_reservacion bigint NOT NULL,
+    checkin timestamp without time zone DEFAULT now() NOT NULL,
+    checkout timestamp without time zone,
+    CONSTRAINT ck_checkin CHECK (((checkout IS NULL) OR (checkin < checkout)))
+);
+
+
+ALTER TABLE public.estadia OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1259 OID 31077)
+-- Name: factura; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.factura (
+    id_factura bigint NOT NULL,
+    id_empleado bigint NOT NULL,
+    id_huesped bigint NOT NULL,
+    id_estadia bigint NOT NULL,
+    fecha timestamp without time zone DEFAULT now() NOT NULL,
+    metodo_pago character varying(50) NOT NULL,
+    total_a_pagar numeric(10,2) NOT NULL,
+    CONSTRAINT ck_metodo_pago CHECK (((metodo_pago)::text = ANY (ARRAY[('EFECTIVO'::character varying)::text, ('TRANSFERENCIA'::character varying)::text, ('TARJETA'::character varying)::text, ('BITCOIN'::character varying)::text, ('PAYPAL'::character varying)::text]))),
+    CONSTRAINT ck_total_pagar CHECK ((total_a_pagar >= (0)::numeric))
+);
+
+
+ALTER TABLE public.factura OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 31090)
+-- Name: habitacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.habitacion (
+    id_habitacion bigint NOT NULL,
+    id_hotel bigint NOT NULL,
+    nivel integer NOT NULL,
+    numero_habitacion integer NOT NULL,
+    id_tipo_habitacion bigint NOT NULL,
+    precio numeric(10,2) NOT NULL,
+    estado character varying(50) NOT NULL,
+    capacidad_maxima integer NOT NULL,
+    descripcion text,
+    CONSTRAINT ck_capacidad_maxima CHECK (((capacidad_maxima >= 1) AND (capacidad_maxima <= 15))),
+    CONSTRAINT ck_estado CHECK (((estado)::text = ANY (ARRAY[('DISPONIBLE'::character varying)::text, ('OCUPADA'::character varying)::text, ('MANTENIMIENTO'::character varying)::text]))),
+    CONSTRAINT ck_nivel CHECK ((nivel >= 0)),
+    CONSTRAINT ck_num_habitacion CHECK ((numero_habitacion >= 0)),
+    CONSTRAINT ck_precio CHECK ((precio >= (0)::numeric))
+);
+
+
+ALTER TABLE public.habitacion OWNER TO postgres;
+
+--
+-- TOC entry 229 (class 1259 OID 31108)
+-- Name: hotel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.hotel (
+    id_hotel bigint NOT NULL,
+    nombre character varying(255) NOT NULL,
+    direccion character varying(255),
+    niveles_edificios integer NOT NULL,
+    calificacion numeric(2,1),
+    descripcion text,
+    CONSTRAINT ck_calificacion CHECK (((calificacion >= (1)::numeric) AND (calificacion <= (5)::numeric))),
+    CONSTRAINT ck_niveles CHECK ((niveles_edificios > 0))
+);
+
+
+ALTER TABLE public.hotel OWNER TO postgres;
+
+--
+-- TOC entry 230 (class 1259 OID 31118)
+-- Name: datos_generales_hoteles; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.datos_generales_hoteles AS
  WITH ganancia_por_anio AS (
@@ -83,17 +826,357 @@ CREATE VIEW public.datos_generales_hoteles AS
     hot.direccion,
     hot.niveles_edificios,
     hot.descripcion,
-    h.habitaciones_totales,
-    h.habitaciones_disponibles,
-    h.habitaciones_ocupadas,
-    h.habitaciones_mantenimiento,
+    COALESCE(h.habitaciones_totales, 0) AS habitaciones_totales,
+    COALESCE(h.habitaciones_disponibles, 0) AS habitaciones_disponibles,
+    COALESCE(h.habitaciones_ocupadas, 0) AS habitaciones_ocupadas,
+    COALESCE(h.habitaciones_mantenimiento, 0) AS habitaciones_mantenimiento,
     COALESCE(pa.ganancia_promedio_anual, 0.00) AS ganancia_promedio_anual,
     COALESCE(pm.ganancia_promedio_mensual, 0.00) AS ganancia_promedio_mensual
    FROM (((public.hotel hot
      LEFT JOIN promedio_anual pa ON ((hot.id_hotel = pa.id_hotel)))
      LEFT JOIN promedio_mensual pm ON ((hot.id_hotel = pm.id_hotel)))
-     JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
+     LEFT JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
   ORDER BY hot.calificacion DESC;
+
+
+ALTER VIEW public.datos_generales_hoteles OWNER TO postgres;
+
+--
+-- TOC entry 231 (class 1259 OID 31123)
+-- Name: descuento; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.descuento (
+    id_descuento bigint NOT NULL,
+    porcentaje_descuento numeric(5,2) NOT NULL,
+    cant_dia_hospedado integer,
+    CONSTRAINT ck_cant_dia CHECK ((cant_dia_hospedado > 0)),
+    CONSTRAINT ck_porcentaje CHECK (((porcentaje_descuento >= (0)::numeric) AND (porcentaje_descuento <= (100)::numeric)))
+);
+
+
+ALTER TABLE public.descuento OWNER TO postgres;
+
+--
+-- TOC entry 232 (class 1259 OID 31130)
+-- Name: descuento_id_descuento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.descuento ALTER COLUMN id_descuento ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.descuento_id_descuento_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 233 (class 1259 OID 31131)
+-- Name: detalle_factura; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.detalle_factura (
+    id_detalle_factura bigint NOT NULL,
+    id_factura bigint NOT NULL,
+    id_servicio bigint,
+    id_habitacion bigint,
+    id_descuento bigint,
+    id_aumento_costo bigint,
+    concepto character varying(255) NOT NULL,
+    precio_unitario numeric(10,2) NOT NULL,
+    cantidad integer NOT NULL,
+    subtotal numeric(10,2) NOT NULL,
+    monto_descuento numeric(10,2) DEFAULT 0.00,
+    monto_aumento numeric(10,2) DEFAULT 0.00,
+    precio_total numeric(10,2) NOT NULL,
+    CONSTRAINT ck_cantidad CHECK ((cantidad >= 1)),
+    CONSTRAINT ck_monto_aumento CHECK ((monto_aumento >= (0)::numeric)),
+    CONSTRAINT ck_monto_descuento CHECK ((monto_descuento >= (0)::numeric)),
+    CONSTRAINT ck_origen_cobro CHECK ((((id_servicio IS NOT NULL) AND (id_habitacion IS NULL)) OR ((id_servicio IS NULL) AND (id_habitacion IS NOT NULL)))),
+    CONSTRAINT ck_precio_total CHECK ((precio_total >= (0)::numeric)),
+    CONSTRAINT ck_precio_unitario CHECK ((precio_unitario >= (0)::numeric)),
+    CONSTRAINT ck_subtotal CHECK ((subtotal >= (0)::numeric))
+);
+
+
+ALTER TABLE public.detalle_factura OWNER TO postgres;
+
+--
+-- TOC entry 234 (class 1259 OID 31150)
+-- Name: detalle_factura_id_detalle_factura_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.detalle_factura ALTER COLUMN id_detalle_factura ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.detalle_factura_id_detalle_factura_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 235 (class 1259 OID 31151)
+-- Name: detalle_reservacion_id_detalle_reservacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.detalle_reservacion ALTER COLUMN id_detalle_reservacion ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.detalle_reservacion_id_detalle_reservacion_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 236 (class 1259 OID 31152)
+-- Name: empleado; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.empleado (
+    id_empleado bigint NOT NULL,
+    id_tipo_empleado bigint NOT NULL,
+    nombre character varying(255) NOT NULL,
+    correo character varying(100) NOT NULL,
+    telefono character varying(20),
+    dui character varying(10) NOT NULL,
+    salario numeric(10,2) NOT NULL,
+    CONSTRAINT ck_correo CHECK (((correo)::text ~~ '%@%.%'::text)),
+    CONSTRAINT ck_dui CHECK (((dui)::text ~ '^[0-9]{8}-[0-9]{1}$'::text)),
+    CONSTRAINT ck_salario CHECK ((salario >= (0)::numeric)),
+    CONSTRAINT ck_telefono CHECK (((telefono)::text ~ '^\+503[267][0-9]{7}$'::text))
+);
+
+
+ALTER TABLE public.empleado OWNER TO postgres;
+
+--
+-- TOC entry 237 (class 1259 OID 31165)
+-- Name: empleado_id_empleado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.empleado ALTER COLUMN id_empleado ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.empleado_id_empleado_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 238 (class 1259 OID 31166)
+-- Name: estadia_id_estadia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.estadia ALTER COLUMN id_estadia ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.estadia_id_estadia_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 239 (class 1259 OID 31167)
+-- Name: factura_id_factura_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.factura ALTER COLUMN id_factura ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.factura_id_factura_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 240 (class 1259 OID 31168)
+-- Name: habitacion_id_habitacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.habitacion ALTER COLUMN id_habitacion ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.habitacion_id_habitacion_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 241 (class 1259 OID 31169)
+-- Name: hotel_id_hotel_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.hotel ALTER COLUMN id_hotel ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.hotel_id_hotel_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 242 (class 1259 OID 31170)
+-- Name: huesped; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.huesped (
+    id_huesped bigint NOT NULL,
+    nombre character varying(255) NOT NULL,
+    correo character varying(255) NOT NULL,
+    telefono character varying(20) NOT NULL,
+    documento character varying(50) NOT NULL,
+    tipo_documento character varying(50) NOT NULL,
+    CONSTRAINT ck_correo CHECK (((correo)::text ~~ '%@%.%'::text)),
+    CONSTRAINT ck_telefono_huesped CHECK (((telefono)::text ~ '^\+?[0-9\s\-]{7,20}$'::text)),
+    CONSTRAINT ck_tipo_documento CHECK (((tipo_documento)::text = ANY (ARRAY[('DUI'::character varying)::text, ('PASAPORTE'::character varying)::text, ('CONSTANCIA DE RESIDENCIA'::character varying)::text])))
+);
+
+
+ALTER TABLE public.huesped OWNER TO postgres;
+
+--
+-- TOC entry 243 (class 1259 OID 31184)
+-- Name: huesped_id_huesped_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.huesped ALTER COLUMN id_huesped ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.huesped_id_huesped_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 244 (class 1259 OID 31185)
+-- Name: resenia; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.resenia (
+    id_resenia bigint NOT NULL,
+    id_estadia bigint NOT NULL,
+    id_huesped bigint NOT NULL,
+    calificacion numeric(2,1),
+    comentario text,
+    CONSTRAINT ck_calificacion CHECK (((calificacion >= (1)::numeric) AND (calificacion <= (5)::numeric)))
+);
+
+
+ALTER TABLE public.resenia OWNER TO postgres;
+
+--
+-- TOC entry 245 (class 1259 OID 31194)
+-- Name: resenia_id_resenia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.resenia ALTER COLUMN id_resenia ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.resenia_id_resenia_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 246 (class 1259 OID 31195)
+-- Name: reservacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reservacion (
+    id_reservacion bigint NOT NULL,
+    id_empleado bigint NOT NULL,
+    id_huesped bigint NOT NULL,
+    cant_huespedes_totales integer NOT NULL,
+    estado character varying(50) NOT NULL,
+    CONSTRAINT ck_cant_huepedes CHECK ((cant_huespedes_totales > 0)),
+    CONSTRAINT ck_estado CHECK (((estado)::text = ANY (ARRAY[('PENDIENTE'::character varying)::text, ('CONFIRMADA'::character varying)::text, ('CANCELADA'::character varying)::text, ('RECHAZADA'::character varying)::text, ('COMPLETADA'::character varying)::text])))
+);
+
+
+ALTER TABLE public.reservacion OWNER TO postgres;
+
+--
+-- TOC entry 247 (class 1259 OID 31205)
+-- Name: reservacion_id_reservacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.reservacion ALTER COLUMN id_reservacion ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.reservacion_id_reservacion_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 248 (class 1259 OID 31206)
+-- Name: servicio; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.servicio (
+    id_servicio bigint NOT NULL,
+    tipo_servicio character varying(100) NOT NULL,
+    precio numeric(10,2) NOT NULL,
+    CONSTRAINT ck_precio CHECK ((precio >= (0)::numeric))
+);
+
+
+ALTER TABLE public.servicio OWNER TO postgres;
+
+--
+-- TOC entry 249 (class 1259 OID 31213)
+-- Name: servicio_id_servicio_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.servicio ALTER COLUMN id_servicio ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.servicio_id_servicio_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 250 (class 1259 OID 31214)
+-- Name: tipo_habitacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tipo_habitacion (
+    id_tipo_habitacion bigint NOT NULL,
+    tipo_habitacion character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.tipo_habitacion OWNER TO postgres;
+
+--
+-- TOC entry 251 (class 1259 OID 31219)
+-- Name: servicios_mas_consumidos_tipo_habitacion; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.servicios_mas_consumidos_tipo_habitacion AS
  SELECT th.id_tipo_habitacion,
@@ -111,6 +1194,85 @@ CREATE VIEW public.servicios_mas_consumidos_tipo_habitacion AS
   GROUP BY th.id_tipo_habitacion, th.tipo_habitacion, s.id_servicio, s.tipo_servicio
   ORDER BY th.tipo_habitacion, (sum(df_serv.cantidad)) DESC;
 
+
+ALTER VIEW public.servicios_mas_consumidos_tipo_habitacion OWNER TO postgres;
+
+--
+-- TOC entry 252 (class 1259 OID 31224)
+-- Name: tipo_comodidad; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tipo_comodidad (
+    id_tipo_comodidad bigint NOT NULL,
+    tipo_comodidad character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.tipo_comodidad OWNER TO postgres;
+
+--
+-- TOC entry 253 (class 1259 OID 31229)
+-- Name: tipo_comodidad_id_tipo_comodidad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.tipo_comodidad ALTER COLUMN id_tipo_comodidad ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.tipo_comodidad_id_tipo_comodidad_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 254 (class 1259 OID 31230)
+-- Name: tipo_empleado; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tipo_empleado (
+    id_tipo_empleado bigint NOT NULL,
+    tipo_empleado character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.tipo_empleado OWNER TO postgres;
+
+--
+-- TOC entry 255 (class 1259 OID 31235)
+-- Name: tipo_empleado_id_tipo_empleado_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.tipo_empleado ALTER COLUMN id_tipo_empleado ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.tipo_empleado_id_tipo_empleado_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 256 (class 1259 OID 31236)
+-- Name: tipo_habitacion_id_tipo_habitacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.tipo_habitacion ALTER COLUMN id_tipo_habitacion ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.tipo_habitacion_id_tipo_habitacion_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 276 (class 1259 OID 31517)
+-- Name: v_consumo_estadia; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.v_consumo_estadia AS
  SELECT e.id_estadia,
     h.nombre,
@@ -126,6 +1288,14 @@ CREATE VIEW public.v_consumo_estadia AS
      JOIN public.reservacion r ON ((e.id_reservacion = r.id_reservacion)))
      JOIN public.huesped h ON ((r.id_huesped = h.id_huesped)))
      LEFT JOIN public.factura f ON ((e.id_estadia = f.id_estadia)));
+
+
+ALTER VIEW public.v_consumo_estadia OWNER TO postgres;
+
+--
+-- TOC entry 266 (class 1259 OID 31468)
+-- Name: v_datos_generales_hoteles; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_datos_generales_hoteles AS
  WITH ganancia_por_anio AS (
@@ -172,17 +1342,25 @@ CREATE VIEW public.v_datos_generales_hoteles AS
     hot.direccion,
     hot.niveles_edificios,
     hot.descripcion,
-    h.habitaciones_totales,
-    h.habitaciones_disponibles,
-    h.habitaciones_ocupadas,
-    h.habitaciones_mantenimiento,
+    COALESCE(h.habitaciones_totales, 0) AS habitaciones_totales,
+    COALESCE(h.habitaciones_disponibles, 0) AS habitaciones_disponibles,
+    COALESCE(h.habitaciones_ocupadas, 0) AS habitaciones_ocupadas,
+    COALESCE(h.habitaciones_mantenimiento, 0) AS habitaciones_mantenimiento,
     COALESCE(pa.ganancia_promedio_anual, 0.00) AS ganancia_promedio_anual,
     COALESCE(pm.ganancia_promedio_mensual, 0.00) AS ganancia_promedio_mensual
    FROM (((public.hotel hot
      LEFT JOIN promedio_anual pa ON ((hot.id_hotel = pa.id_hotel)))
      LEFT JOIN promedio_mensual pm ON ((hot.id_hotel = pm.id_hotel)))
-     JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
+     LEFT JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
   ORDER BY hot.calificacion DESC;
+
+
+ALTER VIEW public.v_datos_generales_hoteles OWNER TO postgres;
+
+--
+-- TOC entry 274 (class 1259 OID 31507)
+-- Name: v_detalle_habitaciones_y_comodidades; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_detalle_habitaciones_y_comodidades AS
  SELECT h.id_habitacion,
@@ -203,6 +1381,14 @@ CREATE VIEW public.v_detalle_habitaciones_y_comodidades AS
   GROUP BY h.id_habitacion, h.numero_habitacion, h.nivel, h.precio, h.estado, h.capacidad_maxima, th.id_tipo_habitacion, th.tipo_habitacion
   ORDER BY th.tipo_habitacion, h.numero_habitacion;
 
+
+ALTER VIEW public.v_detalle_habitaciones_y_comodidades OWNER TO postgres;
+
+--
+-- TOC entry 273 (class 1259 OID 31502)
+-- Name: v_dias_restantes_reservacion; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.v_dias_restantes_reservacion AS
  SELECT r.id_reservacion,
     h.nombre AS nombre_huesped,
@@ -221,6 +1407,14 @@ CREATE VIEW public.v_dias_restantes_reservacion AS
   WHERE (((r.estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'CONFIRMADA'::character varying])::text[])) AND (dr.fecha_entrada >= CURRENT_DATE))
   GROUP BY r.id_reservacion, h.nombre, h.documento, h.telefono, e.nombre, r.cant_huespedes_totales, r.estado
   ORDER BY (min(dr.fecha_entrada) - CURRENT_DATE);
+
+
+ALTER VIEW public.v_dias_restantes_reservacion OWNER TO postgres;
+
+--
+-- TOC entry 267 (class 1259 OID 31473)
+-- Name: v_factura_completa; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_factura_completa AS
  SELECT f.id_factura,
@@ -261,6 +1455,14 @@ CREATE VIEW public.v_factura_completa AS
      JOIN public.empleado e ON ((e.id_empleado = r.id_empleado)))
      JOIN public.huesped h ON ((h.id_huesped = r.id_huesped)));
 
+
+ALTER VIEW public.v_factura_completa OWNER TO postgres;
+
+--
+-- TOC entry 271 (class 1259 OID 31492)
+-- Name: v_gasto_historica; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.v_gasto_historica AS
  SELECT h.id_huesped,
     h.nombre AS huesped,
@@ -273,6 +1475,14 @@ CREATE VIEW public.v_gasto_historica AS
      JOIN public.factura f ON ((h.id_huesped = f.id_huesped)))
   GROUP BY h.id_huesped, h.nombre, h.correo, h.documento, h.tipo_documento
   ORDER BY (sum(f.total_a_pagar)) DESC;
+
+
+ALTER VIEW public.v_gasto_historica OWNER TO postgres;
+
+--
+-- TOC entry 270 (class 1259 OID 31487)
+-- Name: v_habitaciones_disponibles; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_habitaciones_disponibles AS
  SELECT h.id_habitacion,
@@ -288,6 +1498,14 @@ CREATE VIEW public.v_habitaciones_disponibles AS
      JOIN public.hotel ho ON ((h.id_hotel = ho.id_hotel)))
      JOIN public.tipo_habitacion th ON ((h.id_tipo_habitacion = th.id_tipo_habitacion)))
   WHERE ((h.estado)::text = 'DISPONIBLE'::text);
+
+
+ALTER VIEW public.v_habitaciones_disponibles OWNER TO postgres;
+
+--
+-- TOC entry 265 (class 1259 OID 31463)
+-- Name: v_huespedes_por_hotel; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_huespedes_por_hotel AS
  SELECT h.id_huesped,
@@ -305,12 +1523,28 @@ CREATE VIEW public.v_huespedes_por_hotel AS
      JOIN public.hotel hot ON ((hab.id_hotel = hot.id_hotel)))
   GROUP BY h.id_huesped, h.nombre, h.correo, h.documento, h.tipo_documento, hot.nombre;
 
+
+ALTER VIEW public.v_huespedes_por_hotel OWNER TO postgres;
+
+--
+-- TOC entry 269 (class 1259 OID 31482)
+-- Name: v_info_general_hoteles; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.v_info_general_hoteles AS
 SELECT
     NULL::character varying(255) AS hotel,
     NULL::numeric(2,1) AS calificacion,
     NULL::bigint AS cant_habitaciones,
     NULL::numeric AS ganancias;
+
+
+ALTER VIEW public.v_info_general_hoteles OWNER TO postgres;
+
+--
+-- TOC entry 268 (class 1259 OID 31478)
+-- Name: v_ingresos_mes; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_ingresos_mes AS
  SELECT EXTRACT(year FROM fecha) AS anio,
@@ -320,6 +1554,14 @@ CREATE VIEW public.v_ingresos_mes AS
    FROM public.factura f
   GROUP BY (EXTRACT(year FROM fecha)), (EXTRACT(month FROM fecha)), (to_char(fecha, 'Month'::text))
   ORDER BY (EXTRACT(year FROM fecha)) DESC, (EXTRACT(month FROM fecha));
+
+
+ALTER VIEW public.v_ingresos_mes OWNER TO postgres;
+
+--
+-- TOC entry 272 (class 1259 OID 31497)
+-- Name: v_servicios_mas_consumidos_tipo_habitacion; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_servicios_mas_consumidos_tipo_habitacion AS
  SELECT th.id_tipo_habitacion,
@@ -336,6 +1578,14 @@ CREATE VIEW public.v_servicios_mas_consumidos_tipo_habitacion AS
      JOIN public.tipo_habitacion th ON ((h.id_tipo_habitacion = th.id_tipo_habitacion)))
   GROUP BY th.id_tipo_habitacion, th.tipo_habitacion, s.id_servicio, s.tipo_servicio
   ORDER BY th.tipo_habitacion, (sum(df_serv.cantidad)) DESC;
+
+
+ALTER VIEW public.v_servicios_mas_consumidos_tipo_habitacion OWNER TO postgres;
+
+--
+-- TOC entry 264 (class 1259 OID 31458)
+-- Name: v_tasa_ocupacion_mensual; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.v_tasa_ocupacion_mensual AS
  WITH dias_ocupados AS (
@@ -372,6 +1622,14 @@ CREATE VIEW public.v_tasa_ocupacion_mensual AS
      JOIN capacidad_habitaciones ch ON ((oa.id_tipo_habitacion = ch.id_tipo_habitacion)))
   ORDER BY oa.mes_anio DESC, (to_char((((oa.total_dias_ocupados)::numeric / ((ch.cantidad_habitaciones)::numeric * EXTRACT(day FROM ((oa.fecha_base_mes + '1 mon'::interval) - '1 day'::interval)))) * (100)::numeric), 'FM990.00"%"'::text)) DESC;
 
+
+ALTER VIEW public.v_tasa_ocupacion_mensual OWNER TO postgres;
+
+--
+-- TOC entry 275 (class 1259 OID 31512)
+-- Name: v_total_habitaciones_por_tipo; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.v_total_habitaciones_por_tipo AS
  SELECT th.tipo_habitacion,
     count(h.id_habitacion) AS total_habitaciones
@@ -379,6 +1637,14 @@ CREATE VIEW public.v_total_habitaciones_por_tipo AS
      LEFT JOIN public.habitacion h ON ((th.id_tipo_habitacion = h.id_tipo_habitacion)))
   GROUP BY th.id_tipo_habitacion, th.tipo_habitacion
   ORDER BY (count(h.id_habitacion)) DESC;
+
+
+ALTER VIEW public.v_total_habitaciones_por_tipo OWNER TO postgres;
+
+--
+-- TOC entry 257 (class 1259 OID 31237)
+-- Name: vista_calificacion_y_ganancias_prom; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.vista_calificacion_y_ganancias_prom AS
  WITH ganancia_por_anio AS (
@@ -429,6 +1695,14 @@ CREATE VIEW public.vista_calificacion_y_ganancias_prom AS
      LEFT JOIN promedio_mensual pm ON ((hot.id_hotel = pm.id_hotel)))
      LEFT JOIN promedio_calificacion pc ON ((hot.id_hotel = pc.id_hotel)));
 
+
+ALTER VIEW public.vista_calificacion_y_ganancias_prom OWNER TO postgres;
+
+--
+-- TOC entry 277 (class 1259 OID 31522)
+-- Name: vista_empleados; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.vista_empleados AS
  SELECT e.nombre AS empleado,
     e.dui AS documento_de_identidad,
@@ -438,6 +1712,14 @@ CREATE VIEW public.vista_empleados AS
     e.salario
    FROM (public.empleado e
      JOIN public.tipo_empleado te ON ((e.id_tipo_empleado = te.id_tipo_empleado)));
+
+
+ALTER VIEW public.vista_empleados OWNER TO postgres;
+
+--
+-- TOC entry 258 (class 1259 OID 31242)
+-- Name: vista_factura_completa; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.vista_factura_completa AS
  SELECT f.id_factura,
@@ -477,6 +1759,14 @@ CREATE VIEW public.vista_factura_completa AS
      JOIN public.empleado e ON ((e.id_empleado = r.id_empleado)))
      JOIN public.huesped h ON ((h.id_huesped = r.id_huesped)));
 
+
+ALTER VIEW public.vista_factura_completa OWNER TO postgres;
+
+--
+-- TOC entry 259 (class 1259 OID 31247)
+-- Name: vista_gasto_historica; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.vista_gasto_historica AS
  SELECT h.id_huesped,
     h.nombre AS huesped,
@@ -489,6 +1779,14 @@ CREATE VIEW public.vista_gasto_historica AS
      JOIN public.factura f ON ((h.id_huesped = f.id_huesped)))
   GROUP BY h.id_huesped, h.nombre, h.correo, h.documento, h.tipo_documento
   ORDER BY (sum(f.total_a_pagar)) DESC;
+
+
+ALTER VIEW public.vista_gasto_historica OWNER TO postgres;
+
+--
+-- TOC entry 260 (class 1259 OID 31252)
+-- Name: vista_habitaciones_disponibles; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.vista_habitaciones_disponibles AS
  SELECT h.id_habitacion,
@@ -504,6 +1802,14 @@ CREATE VIEW public.vista_habitaciones_disponibles AS
      JOIN public.hotel ho ON ((h.id_hotel = ho.id_hotel)))
      JOIN public.tipo_habitacion th ON ((h.id_tipo_habitacion = th.id_tipo_habitacion)))
   WHERE ((h.estado)::text = 'DISPONIBLE'::text);
+
+
+ALTER VIEW public.vista_habitaciones_disponibles OWNER TO postgres;
+
+--
+-- TOC entry 261 (class 1259 OID 31257)
+-- Name: vista_resenias_y_ganancias; Type: VIEW; Schema: public; Owner: postgres
+--
 
 CREATE VIEW public.vista_resenias_y_ganancias AS
  WITH ganancia_por_anio AS (
@@ -554,6 +1860,14 @@ CREATE VIEW public.vista_resenias_y_ganancias AS
      LEFT JOIN promedio_mensual pm ON ((hot.id_hotel = pm.id_hotel)))
      LEFT JOIN promedio_calificacion pc ON ((hot.id_hotel = pc.id_hotel)));
 
+
+ALTER VIEW public.vista_resenias_y_ganancias OWNER TO postgres;
+
+--
+-- TOC entry 262 (class 1259 OID 31262)
+-- Name: vista_tasa_ocupacion_mensual; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.vista_tasa_ocupacion_mensual AS
  WITH dias_ocupados AS (
          SELECT dr.id_habitacion,
@@ -589,6 +1903,14 @@ CREATE VIEW public.vista_tasa_ocupacion_mensual AS
      JOIN capacidad_habitaciones ch ON ((oa.id_tipo_habitacion = ch.id_tipo_habitacion)))
   ORDER BY oa.mes_anio DESC, (to_char((((oa.total_dias_ocupados)::numeric / ((ch.cantidad_habitaciones)::numeric * EXTRACT(day FROM ((oa.fecha_base_mes + '1 mon'::interval) - '1 day'::interval)))) * (100)::numeric), 'FM990.00"%"'::text)) DESC;
 
+
+ALTER VIEW public.vista_tasa_ocupacion_mensual OWNER TO postgres;
+
+--
+-- TOC entry 263 (class 1259 OID 31267)
+-- Name: vistas_huespuedes; Type: VIEW; Schema: public; Owner: postgres
+--
+
 CREATE VIEW public.vistas_huespuedes AS
  SELECT h.id_huesped,
     h.nombre AS huesped,
@@ -606,24 +1928,14 @@ CREATE VIEW public.vistas_huespuedes AS
   GROUP BY h.id_huesped, h.nombre, h.correo, h.documento, h.tipo_documento, hot.nombre
   ORDER BY hot.nombre DESC, (count(DISTINCT f.id_factura)) DESC;
 
-CREATE OR REPLACE VIEW public.v_info_general_hoteles AS
- SELECT h.nombre AS hotel,
-    h.calificacion,
-    count(DISTINCT h2.id_habitacion) AS cant_habitaciones,
-    sum(df.precio_total) AS ganancias
-   FROM (((public.hotel h
-     JOIN public.habitacion h2 ON ((h.id_hotel = h2.id_hotel)))
-     JOIN public.detalle_factura df ON ((h2.id_habitacion = df.id_habitacion)))
-     JOIN public.factura f ON ((df.id_factura = f.id_factura)))
-  GROUP BY h.id_hotel;
 
-CREATE TRIGGER tg_check_nivel_habitacion BEFORE INSERT OR UPDATE ON public.habitacion FOR EACH ROW EXECUTE FUNCTION public.fn_validar_nivel_habitacion();
+ALTER VIEW public.vistas_huespuedes OWNER TO postgres;
 
-CREATE TRIGGER trg_actualizar_calificacion AFTER INSERT OR UPDATE ON public.resenia FOR EACH ROW EXECUTE FUNCTION public.fn_actualizar_calificacion_hotel();
-
-CREATE TRIGGER trg_checkout_factura AFTER UPDATE OF checkout ON public.estadia FOR EACH ROW EXECUTE FUNCTION public.fn_generar_factura_checkout();
-
-CREATE TRIGGER trg_verificar_reserva BEFORE INSERT OR UPDATE ON public.detalle_reservacion FOR EACH ROW EXECUTE FUNCTION public.fn_validar_disponibilidad_habitacion();
+--
+-- TOC entry 5340 (class 0 OID 31027)
+-- Dependencies: 219
+-- Data for Name: aumento_costos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.aumento_costos (id_aumento_costo, porcentaje_aumento, fecha_inicio, fecha_fin, nombre_temporada, activado) FROM stdin;
 1	10.00	2026-12-15	2027-01-05	Navidad 2026	t
@@ -637,6 +1949,13 @@ COPY public.aumento_costos (id_aumento_costo, porcentaje_aumento, fecha_inicio, 
 9	10.00	2026-05-01	2026-05-03	D??a del Trabajo 2026	t
 10	25.00	2026-12-30	2027-01-02	Fin de A??o 2026	t
 \.
+
+
+--
+-- TOC entry 5342 (class 0 OID 31038)
+-- Dependencies: 221
+-- Data for Name: comodidad_tipo_habitacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitacion, id_tipo_comodidad, detalle) FROM stdin;
 1	7	1	Disponible bajo petici??n
@@ -1616,6 +2935,13 @@ COPY public.comodidad_tipo_habitacion (id_comodidad_habitacion, id_tipo_habitaci
 975	6	10	Disponible bajo petici??n
 976	8	8	Mantenimiento mensual
 \.
+
+
+--
+-- TOC entry 5344 (class 0 OID 31048)
+-- Dependencies: 223
+-- Data for Name: consumo_servicio; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.consumo_servicio (id_consumo_servicio, id_servicio, id_habitacion, id_estadia, hora_consumo) FROM stdin;
 5495	10	196	1001	2025-10-26 02:16:44.019304
@@ -2788,6 +4114,13 @@ COPY public.consumo_servicio (id_consumo_servicio, id_servicio, id_habitacion, i
 5482	3	303	948	2025-09-23 16:09:18.983727
 \.
 
+
+--
+-- TOC entry 5351 (class 0 OID 31123)
+-- Dependencies: 231
+-- Data for Name: descuento; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.descuento (id_descuento, porcentaje_descuento, cant_dia_hospedado) FROM stdin;
 1	5.00	3
 2	10.00	5
@@ -2801,8 +4134,1439 @@ COPY public.descuento (id_descuento, porcentaje_descuento, cant_dia_hospedado) F
 10	30.00	30
 \.
 
+
+--
+-- TOC entry 5353 (class 0 OID 31131)
+-- Dependencies: 233
+-- Data for Name: detalle_factura; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.detalle_factura (id_detalle_factura, id_factura, id_servicio, id_habitacion, id_descuento, id_aumento_costo, concepto, precio_unitario, cantidad, subtotal, monto_descuento, monto_aumento, precio_total) FROM stdin;
-1	1	\N
+1	1	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	1	116.86	0.00	0.00	116.86
+2	2	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+3	3	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
+4	4	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+5	5	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
+6	6	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+7	7	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
+8	8	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+9	9	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	2	233.72	0.00	0.00	233.72
+10	10	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
+11	11	\N	282	\N	\N	Estad├¡a de habitaci├│n	748.15	10	7481.50	0.00	0.00	7481.50
+12	12	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
+13	13	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
+14	14	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	2	233.72	0.00	0.00	233.72
+15	15	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
+16	16	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	1	116.86	0.00	0.00	116.86
+17	17	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
+18	18	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
+19	19	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+20	20	\N	151	\N	\N	Estad├¡a de habitaci├│n	110.54	14	1547.56	0.00	0.00	1547.56
+21	21	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
+22	22	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+23	23	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
+24	24	\N	13	\N	\N	Estad├¡a de habitaci├│n	646.25	5	3231.25	0.00	0.00	3231.25
+25	25	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
+26	26	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
+27	27	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	6	701.16	0.00	0.00	701.16
+28	28	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+29	29	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
+30	30	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
+31	31	\N	78	\N	\N	Estad├¡a de habitaci├│n	176.29	10	1762.90	0.00	0.00	1762.90
+32	32	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
+33	33	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
+34	34	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+35	35	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+36	36	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
+37	37	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+38	38	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
+39	39	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+40	40	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
+41	41	\N	49	\N	\N	Estad├¡a de habitaci├│n	451.40	12	5416.80	0.00	0.00	5416.80
+42	42	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
+43	43	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
+44	44	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
+45	45	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
+46	46	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+47	47	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
+48	48	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+49	49	\N	17	\N	\N	Estad├¡a de habitaci├│n	439.08	2	878.16	0.00	0.00	878.16
+50	50	\N	260	\N	\N	Estad├¡a de habitaci├│n	431.26	9	3881.34	0.00	0.00	3881.34
+51	51	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
+52	52	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
+53	53	\N	120	\N	\N	Estad├¡a de habitaci├│n	155.80	10	1558.00	0.00	0.00	1558.00
+54	54	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+55	55	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
+56	56	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
+57	57	\N	81	\N	\N	Estad├¡a de habitaci├│n	439.03	11	4829.33	0.00	0.00	4829.33
+58	58	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	1	116.86	0.00	0.00	116.86
+59	59	\N	57	\N	\N	Estad├¡a de habitaci├│n	683.50	5	3417.50	0.00	0.00	3417.50
+60	59	\N	57	\N	\N	Estad├¡a de habitaci├│n	683.50	5	3417.50	0.00	0.00	3417.50
+61	60	\N	112	\N	\N	Estad├¡a de habitaci├│n	210.33	13	2734.29	0.00	0.00	2734.29
+62	61	\N	896	\N	\N	Estad├¡a de habitaci├│n	699.26	8	5594.08	0.00	0.00	5594.08
+63	62	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
+64	63	\N	853	\N	\N	Estad├¡a de habitaci├│n	261.76	9	2355.84	0.00	0.00	2355.84
+65	64	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+66	65	\N	85	\N	\N	Estad├¡a de habitaci├│n	204.31	8	1634.48	0.00	0.00	1634.48
+67	66	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	12	1402.32	0.00	0.00	1402.32
+68	67	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	13	1519.18	0.00	0.00	1519.18
+69	68	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
+70	69	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
+71	70	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	9	1051.74	0.00	0.00	1051.74
+72	71	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	3	350.58	0.00	0.00	350.58
+73	72	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+74	73	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
+75	74	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+76	75	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	6	701.16	0.00	0.00	701.16
+77	76	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
+78	77	\N	38	\N	\N	Estad├¡a de habitaci├│n	229.98	15	3449.70	0.00	0.00	3449.70
+79	78	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
+80	79	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
+81	80	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	4	467.44	0.00	0.00	467.44
+82	81	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	8	934.88	0.00	0.00	934.88
+83	82	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
+84	83	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
+85	84	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
+86	85	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
+87	86	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	5	584.30	0.00	0.00	584.30
+88	87	\N	303	\N	\N	Estad├¡a de habitaci├│n	707.69	3	2123.07	0.00	0.00	2123.07
+89	87	\N	303	\N	\N	Estad├¡a de habitaci├│n	707.69	3	2123.07	0.00	0.00	2123.07
+90	88	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	10	1168.60	0.00	0.00	1168.60
+91	89	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
+92	90	\N	73	\N	\N	Estad├¡a de habitaci├│n	532.31	13	6920.03	0.00	0.00	6920.03
+93	90	\N	73	\N	\N	Estad├¡a de habitaci├│n	532.31	13	6920.03	0.00	0.00	6920.03
+94	91	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
+95	92	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	14	1636.04	0.00	0.00	1636.04
+96	93	\N	180	\N	\N	Estad├¡a de habitaci├│n	580.66	4	2322.64	0.00	0.00	2322.64
+97	94	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	7	818.02	0.00	0.00	818.02
+98	95	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	11	1285.46	0.00	0.00	1285.46
+99	96	\N	333	\N	\N	Estad├¡a de habitaci├│n	589.81	8	4718.48	0.00	0.00	4718.48
+100	96	\N	699	\N	\N	Estad├¡a de habitaci├│n	351.55	8	2812.40	0.00	0.00	2812.40
+101	97	\N	181	\N	\N	Estad├¡a de habitaci├│n	655.55	1	655.55	0.00	0.00	655.55
+102	97	\N	342	\N	\N	Estad├¡a de habitaci├│n	740.68	1	740.68	0.00	0.00	740.68
+103	98	\N	419	\N	\N	Estad├¡a de habitaci├│n	366.54	11	4031.94	0.00	0.00	4031.94
+104	98	\N	490	\N	\N	Estad├¡a de habitaci├│n	246.47	11	2711.17	0.00	0.00	2711.17
+105	98	\N	688	\N	\N	Estad├¡a de habitaci├│n	520.26	11	5722.86	0.00	0.00	5722.86
+106	99	\N	727	\N	\N	Estad├¡a de habitaci├│n	198.62	5	993.10	0.00	0.00	993.10
+107	100	\N	93	\N	\N	Estad├¡a de habitaci├│n	717.83	15	10767.45	0.00	0.00	10767.45
+108	100	\N	435	\N	\N	Estad├¡a de habitaci├│n	120.67	15	1810.05	0.00	0.00	1810.05
+109	100	\N	379	\N	\N	Estad├¡a de habitaci├│n	566.82	15	8502.30	0.00	0.00	8502.30
+110	101	\N	595	\N	\N	Estad├¡a de habitaci├│n	609.16	13	7919.08	0.00	0.00	7919.08
+111	102	\N	494	\N	\N	Estad├¡a de habitaci├│n	739.72	2	1479.44	0.00	0.00	1479.44
+112	102	\N	303	\N	\N	Estad├¡a de habitaci├│n	707.69	2	1415.38	0.00	0.00	1415.38
+113	103	\N	783	\N	\N	Estad├¡a de habitaci├│n	707.31	14	9902.34	0.00	0.00	9902.34
+114	103	\N	390	\N	\N	Estad├¡a de habitaci├│n	398.74	14	5582.36	0.00	0.00	5582.36
+115	103	\N	45	\N	\N	Estad├¡a de habitaci├│n	732.84	14	10259.76	0.00	0.00	10259.76
+116	103	\N	244	\N	\N	Estad├¡a de habitaci├│n	563.19	14	7884.66	0.00	0.00	7884.66
+117	104	\N	613	\N	\N	Estad├¡a de habitaci├│n	554.50	11	6099.50	0.00	0.00	6099.50
+118	104	\N	1	\N	\N	Estad├¡a de habitaci├│n	79.74	11	877.14	0.00	0.00	877.14
+119	104	\N	814	\N	\N	Estad├¡a de habitaci├│n	583.10	11	6414.10	0.00	0.00	6414.10
+120	105	\N	903	\N	\N	Estad├¡a de habitaci├│n	588.47	6	3530.82	0.00	0.00	3530.82
+121	106	\N	699	\N	\N	Estad├¡a de habitaci├│n	351.55	10	3515.50	0.00	0.00	3515.50
+122	107	\N	954	\N	\N	Estad├¡a de habitaci├│n	616.98	11	6786.78	0.00	0.00	6786.78
+123	107	\N	70	\N	\N	Estad├¡a de habitaci├│n	170.26	11	1872.86	0.00	0.00	1872.86
+124	107	\N	463	\N	\N	Estad├¡a de habitaci├│n	665.51	11	7320.61	0.00	0.00	7320.61
+125	108	\N	595	\N	\N	Estad├¡a de habitaci├│n	609.16	5	3045.80	0.00	0.00	3045.80
+126	109	\N	131	\N	\N	Estad├¡a de habitaci├│n	529.45	3	1588.35	0.00	0.00	1588.35
+127	109	\N	877	\N	\N	Estad├¡a de habitaci├│n	250.72	3	752.16	0.00	0.00	752.16
+128	110	\N	645	\N	\N	Estad├¡a de habitaci├│n	705.98	1	705.98	0.00	0.00	705.98
+129	111	\N	784	\N	\N	Estad├¡a de habitaci├│n	472.57	13	6143.41	0.00	0.00	6143.41
+130	112	\N	162	\N	\N	Estad├¡a de habitaci├│n	668.63	13	8692.19	0.00	0.00	8692.19
+131	112	\N	401	\N	\N	Estad├¡a de habitaci├│n	448.34	13	5828.42	0.00	0.00	5828.42
+132	113	\N	916	\N	\N	Estad├¡a de habitaci├│n	145.35	2	290.70	0.00	0.00	290.70
+133	114	\N	490	\N	\N	Estad├¡a de habitaci├│n	246.47	8	1971.76	0.00	0.00	1971.76
+134	114	\N	242	\N	\N	Estad├¡a de habitaci├│n	401.76	8	3214.08	0.00	0.00	3214.08
+135	115	\N	652	\N	\N	Estad├¡a de habitaci├│n	138.34	14	1936.76	0.00	0.00	1936.76
+136	115	\N	583	\N	\N	Estad├¡a de habitaci├│n	636.49	14	8910.86	0.00	0.00	8910.86
+137	116	\N	864	\N	\N	Estad├¡a de habitaci├│n	583.95	4	2335.80	0.00	0.00	2335.80
+138	117	\N	366	\N	\N	Estad├¡a de habitaci├│n	692.51	7	4847.57	0.00	0.00	4847.57
+139	118	\N	203	\N	\N	Estad├¡a de habitaci├│n	232.34	1	232.34	0.00	0.00	232.34
+140	118	\N	681	\N	\N	Estad├¡a de habitaci├│n	145.90	1	145.90	0.00	0.00	145.90
+141	119	\N	178	\N	\N	Estad├¡a de habitaci├│n	353.55	14	4949.70	0.00	0.00	4949.70
+142	119	\N	110	\N	\N	Estad├¡a de habitaci├│n	288.54	14	4039.56	0.00	0.00	4039.56
+143	119	\N	773	\N	\N	Estad├¡a de habitaci├│n	397.23	14	5561.22	0.00	0.00	5561.22
+144	120	\N	753	\N	\N	Estad├¡a de habitaci├│n	215.89	10	2158.90	0.00	0.00	2158.90
+145	120	\N	340	\N	\N	Estad├¡a de habitaci├│n	257.22	10	2572.20	0.00	0.00	2572.20
+146	121	\N	741	\N	\N	Estad├¡a de habitaci├│n	529.31	15	7939.65	0.00	0.00	7939.65
+147	121	\N	799	\N	\N	Estad├¡a de habitaci├│n	536.00	15	8040.00	0.00	0.00	8040.00
+148	121	\N	446	\N	\N	Estad├¡a de habitaci├│n	644.51	15	9667.65	0.00	0.00	9667.65
+149	122	\N	536	\N	\N	Estad├¡a de habitaci├│n	676.69	14	9473.66	0.00	0.00	9473.66
+150	122	\N	307	\N	\N	Estad├¡a de habitaci├│n	386.39	14	5409.46	0.00	0.00	5409.46
+151	123	\N	437	\N	\N	Estad├¡a de habitaci├│n	147.59	4	590.36	0.00	0.00	590.36
+152	124	\N	233	\N	\N	Estad├¡a de habitaci├│n	686.64	13	8926.32	0.00	0.00	8926.32
+153	124	\N	813	\N	\N	Estad├¡a de habitaci├│n	650.21	13	8452.73	0.00	0.00	8452.73
+154	125	\N	78	\N	\N	Estad├¡a de habitaci├│n	176.29	8	1410.32	0.00	0.00	1410.32
+155	125	\N	428	\N	\N	Estad├¡a de habitaci├│n	530.51	8	4244.08	0.00	0.00	4244.08
+156	126	\N	211	\N	\N	Estad├¡a de habitaci├│n	98.00	11	1078.00	0.00	0.00	1078.00
+157	127	\N	553	\N	\N	Estad├¡a de habitaci├│n	538.07	9	4842.63	0.00	0.00	4842.63
+158	127	\N	296	\N	\N	Estad├¡a de habitaci├│n	209.02	9	1881.18	0.00	0.00	1881.18
+159	127	\N	222	\N	\N	Estad├¡a de habitaci├│n	365.52	9	3289.68	0.00	0.00	3289.68
+160	127	\N	576	\N	\N	Estad├¡a de habitaci├│n	723.00	9	6507.00	0.00	0.00	6507.00
+161	128	\N	896	\N	\N	Estad├¡a de habitaci├│n	699.26	13	9090.38	0.00	0.00	9090.38
+162	129	\N	639	\N	\N	Estad├¡a de habitaci├│n	327.57	3	982.71	0.00	0.00	982.71
+163	129	\N	426	\N	\N	Estad├¡a de habitaci├│n	271.44	3	814.32	0.00	0.00	814.32
+164	130	\N	111	\N	\N	Estad├¡a de habitaci├│n	234.07	12	2808.84	0.00	0.00	2808.84
+165	131	\N	670	\N	\N	Estad├¡a de habitaci├│n	143.71	3	431.13	0.00	0.00	431.13
+166	131	\N	647	\N	\N	Estad├¡a de habitaci├│n	403.25	3	1209.75	0.00	0.00	1209.75
+167	132	\N	559	\N	\N	Estad├¡a de habitaci├│n	252.82	4	1011.28	0.00	0.00	1011.28
+168	132	\N	673	\N	\N	Estad├¡a de habitaci├│n	254.28	4	1017.12	0.00	0.00	1017.12
+169	133	\N	480	\N	\N	Estad├¡a de habitaci├│n	514.60	8	4116.80	0.00	0.00	4116.80
+170	134	\N	147	\N	\N	Estad├¡a de habitaci├│n	281.19	13	3655.47	0.00	0.00	3655.47
+171	135	\N	836	\N	\N	Estad├¡a de habitaci├│n	529.56	1	529.56	0.00	0.00	529.56
+172	135	\N	154	\N	\N	Estad├¡a de habitaci├│n	178.37	1	178.37	0.00	0.00	178.37
+173	135	\N	752	\N	\N	Estad├¡a de habitaci├│n	201.36	1	201.36	0.00	0.00	201.36
+174	136	\N	673	\N	\N	Estad├¡a de habitaci├│n	254.28	7	1779.96	0.00	0.00	1779.96
+175	137	\N	933	\N	\N	Estad├¡a de habitaci├│n	485.18	3	1455.54	0.00	0.00	1455.54
+176	137	\N	831	\N	\N	Estad├¡a de habitaci├│n	749.82	3	2249.46	0.00	0.00	2249.46
+177	138	\N	817	\N	\N	Estad├¡a de habitaci├│n	91.00	15	1365.00	0.00	0.00	1365.00
+178	138	\N	165	\N	\N	Estad├¡a de habitaci├│n	144.18	15	2162.70	0.00	0.00	2162.70
+179	139	\N	380	\N	\N	Estad├¡a de habitaci├│n	190.39	13	2475.07	0.00	0.00	2475.07
+180	139	\N	435	\N	\N	Estad├¡a de habitaci├│n	120.67	13	1568.71	0.00	0.00	1568.71
+181	139	\N	836	\N	\N	Estad├¡a de habitaci├│n	529.56	13	6884.28	0.00	0.00	6884.28
+182	140	\N	456	\N	\N	Estad├¡a de habitaci├│n	744.84	9	6703.56	0.00	0.00	6703.56
+183	140	\N	23	\N	\N	Estad├¡a de habitaci├│n	394.30	9	3548.70	0.00	0.00	3548.70
+184	140	\N	246	\N	\N	Estad├¡a de habitaci├│n	351.19	9	3160.71	0.00	0.00	3160.71
+185	141	\N	935	\N	\N	Estad├¡a de habitaci├│n	740.62	12	8887.44	0.00	0.00	8887.44
+186	141	\N	33	\N	\N	Estad├¡a de habitaci├│n	273.74	12	3284.88	0.00	0.00	3284.88
+187	142	\N	429	\N	\N	Estad├¡a de habitaci├│n	575.66	8	4605.28	0.00	0.00	4605.28
+188	143	\N	11	\N	\N	Estad├¡a de habitaci├│n	658.48	10	6584.80	0.00	0.00	6584.80
+189	144	\N	628	\N	\N	Estad├¡a de habitaci├│n	75.26	6	451.56	0.00	0.00	451.56
+190	144	\N	256	\N	\N	Estad├¡a de habitaci├│n	536.08	6	3216.48	0.00	0.00	3216.48
+191	145	\N	299	\N	\N	Estad├¡a de habitaci├│n	723.50	7	5064.50	0.00	0.00	5064.50
+192	145	\N	626	\N	\N	Estad├¡a de habitaci├│n	746.09	7	5222.63	0.00	0.00	5222.63
+193	146	\N	906	\N	\N	Estad├¡a de habitaci├│n	88.00	3	264.00	0.00	0.00	264.00
+194	146	\N	397	\N	\N	Estad├¡a de habitaci├│n	116.01	3	348.03	0.00	0.00	348.03
+195	146	\N	947	\N	\N	Estad├¡a de habitaci├│n	92.74	3	278.22	0.00	0.00	278.22
+196	146	\N	229	\N	\N	Estad├¡a de habitaci├│n	118.17	3	354.51	0.00	0.00	354.51
+197	147	\N	485	\N	\N	Estad├¡a de habitaci├│n	88.73	3	266.19	0.00	0.00	266.19
+198	148	\N	724	\N	\N	Estad├¡a de habitaci├│n	552.42	15	8286.30	0.00	0.00	8286.30
+199	148	\N	361	\N	\N	Estad├¡a de habitaci├│n	487.63	15	7314.45	0.00	0.00	7314.45
+200	149	\N	419	\N	\N	Estad├¡a de habitaci├│n	366.54	15	5498.10	0.00	0.00	5498.10
+201	149	\N	396	\N	\N	Estad├¡a de habitaci├│n	560.39	15	8405.85	0.00	0.00	8405.85
+202	149	\N	331	\N	\N	Estad├¡a de habitaci├│n	116.86	15	1752.90	0.00	0.00	1752.90
+203	150	\N	898	\N	\N	Estad├¡a de habitaci├│n	314.31	15	4714.65	0.00	0.00	4714.65
+204	151	\N	773	\N	\N	Estad├¡a de habitaci├│n	397.23	10	3972.30	0.00	0.00	3972.30
+205	152	\N	368	\N	\N	Estad├¡a de habitaci├│n	682.15	5	3410.75	0.00	0.00	3410.75
+206	153	\N	452	\N	\N	Estad├¡a de habitaci├│n	447.73	15	6715.95	0.00	0.00	6715.95
+207	154	\N	640	\N	\N	Estad├¡a de habitaci├│n	714.98	15	10724.70	0.00	0.00	10724.70
+208	155	\N	646	\N	\N	Estad├¡a de habitaci├│n	441.45	3	1324.35	0.00	0.00	1324.35
+209	156	\N	521	\N	\N	Estad├¡a de habitaci├│n	489.48	7	3426.36	0.00	0.00	3426.36
+210	156	\N	439	\N	\N	Estad├¡a de habitaci├│n	489.17	7	3424.19	0.00	0.00	3424.19
+211	157	\N	535	\N	\N	Estad├¡a de habitaci├│n	734.51	11	8079.61	0.00	0.00	8079.61
+212	158	\N	64	\N	\N	Estad├¡a de habitaci├│n	384.40	10	3844.00	0.00	0.00	3844.00
+213	159	\N	655	\N	\N	Estad├¡a de habitaci├│n	566.78	2	1133.56	0.00	0.00	1133.56
+214	160	\N	314	\N	\N	Estad├¡a de habitaci├│n	82.38	7	576.66	0.00	0.00	576.66
+215	161	\N	960	\N	\N	Estad├¡a de habitaci├│n	616.71	11	6783.81	0.00	0.00	6783.81
+216	162	\N	409	\N	\N	Estad├¡a de habitaci├│n	655.47	15	9832.05	0.00	0.00	9832.05
+217	163	\N	728	\N	\N	Estad├¡a de habitaci├│n	518.03	9	4662.27	0.00	0.00	4662.27
+218	164	\N	973	\N	\N	Estad├¡a de habitaci├│n	111.26	4	445.04	0.00	0.00	445.04
+219	165	\N	488	\N	\N	Estad├¡a de habitaci├│n	532.94	14	7461.16	0.00	0.00	7461.16
+220	165	\N	229	\N	\N	Estad├¡a de habitaci├│n	118.17	14	1654.38	0.00	0.00	1654.38
+221	166	\N	852	\N	\N	Estad├¡a de habitaci├│n	408.84	3	1226.52	0.00	0.00	1226.52
+222	166	\N	520	\N	\N	Estad├¡a de habitaci├│n	169.63	3	508.89	0.00	0.00	508.89
+223	167	\N	694	\N	\N	Estad├¡a de habitaci├│n	172.26	12	2067.12	0.00	0.00	2067.12
+224	168	\N	915	\N	\N	Estad├¡a de habitaci├│n	628.76	1	628.76	0.00	0.00	628.76
+225	169	\N	248	\N	\N	Estad├¡a de habitaci├│n	137.99	5	689.95	0.00	0.00	689.95
+226	170	\N	536	\N	\N	Estad├¡a de habitaci├│n	676.69	12	8120.28	0.00	0.00	8120.28
+227	171	\N	202	\N	\N	Estad├¡a de habitaci├│n	548.44	4	2193.76	0.00	0.00	2193.76
+228	171	\N	518	\N	\N	Estad├¡a de habitaci├│n	400.95	4	1603.80	0.00	0.00	1603.80
+229	172	\N	532	\N	\N	Estad├¡a de habitaci├│n	67.00	11	737.00	0.00	0.00	737.00
+230	173	\N	806	\N	\N	Estad├¡a de habitaci├│n	117.18	4	468.72	0.00	0.00	468.72
+231	174	\N	816	\N	\N	Estad├¡a de habitaci├│n	237.26	6	1423.56	0.00	0.00	1423.56
+232	174	\N	367	\N	\N	Estad├¡a de habitaci├│n	476.20	6	2857.20	0.00	0.00	2857.20
+233	175	\N	561	\N	\N	Estad├¡a de habitaci├│n	473.37	3	1420.11	0.00	0.00	1420.11
+234	176	\N	464	\N	\N	Estad├¡a de habitaci├│n	600.28	1	600.28	0.00	0.00	600.28
+235	177	\N	288	\N	\N	Estad├¡a de habitaci├│n	86.00	10	860.00	0.00	0.00	860.00
+236	178	\N	332	\N	\N	Estad├¡a de habitaci├│n	470.38	13	6114.94	0.00	0.00	6114.94
+237	178	\N	820	\N	\N	Estad├¡a de habitaci├│n	148.49	13	1930.37	0.00	0.00	1930.37
+238	179	\N	418	\N	\N	Estad├¡a de habitaci├│n	700.87	3	2102.61	0.00	0.00	2102.61
+239	180	\N	301	\N	\N	Estad├¡a de habitaci├│n	508.72	5	2543.60	0.00	0.00	2543.60
+240	155	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+241	101	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+242	143	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+243	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+244	142	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+245	32	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+246	146	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+247	52	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+248	97	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+249	9	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+250	144	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+251	124	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+252	169	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+253	92	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+254	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+255	169	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+256	142	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+257	21	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+258	67	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+259	35	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+260	162	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+261	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+262	95	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+263	157	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+264	22	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+265	25	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+266	60	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+267	60	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+268	18	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+269	160	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+270	66	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+271	18	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+272	74	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+273	50	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+274	66	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+275	56	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+276	18	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+277	47	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+278	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+279	12	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+280	153	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+281	164	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+282	51	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+283	178	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+284	98	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+285	129	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+286	18	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+287	25	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+288	96	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+289	154	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+290	158	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+291	11	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+292	87	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+293	163	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+294	20	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+295	126	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+296	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+297	175	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+298	173	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+299	177	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+300	44	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+301	85	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+302	116	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+303	55	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+304	5	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+305	178	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+306	118	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+307	147	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+308	25	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+309	25	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+310	179	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+311	83	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+312	28	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+313	99	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+314	31	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+315	131	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+316	14	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+317	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+318	144	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+319	165	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+320	95	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+321	8	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+322	39	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+323	28	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+324	117	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+325	55	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+326	102	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+327	1	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+328	1	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+329	68	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+330	162	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+331	52	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+332	105	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+333	97	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+334	112	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+335	13	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+336	164	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+337	87	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+338	166	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+339	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+340	161	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+341	76	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+342	101	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+343	144	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+344	175	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+345	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+346	170	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+347	114	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+348	130	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+349	151	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+350	38	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+351	160	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+352	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+353	132	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+354	87	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+355	53	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+356	153	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+357	142	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+358	67	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+359	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+360	101	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+361	41	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+362	57	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+363	74	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+364	59	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+365	8	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+366	2	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+367	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+368	46	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+369	132	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+370	63	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+371	47	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+372	53	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+373	40	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+374	24	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+375	164	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+376	10	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+377	5	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+378	29	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+379	158	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+380	68	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+381	136	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+382	134	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+383	102	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+384	127	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+385	165	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+386	30	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+387	67	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+388	124	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+389	10	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+390	99	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+391	108	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+392	2	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+393	33	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+394	1	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+395	37	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+396	36	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+397	142	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+398	21	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+399	20	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+400	40	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+401	43	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+402	59	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+403	129	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+404	13	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+405	112	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+406	96	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+407	96	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+408	96	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+409	96	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+410	96	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+411	96	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+412	97	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+413	97	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+414	97	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+415	97	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+416	97	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+417	97	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+418	98	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+419	98	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+420	98	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+421	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+422	98	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+423	98	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+424	99	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+425	99	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+426	99	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+427	99	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+428	99	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+429	99	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+430	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+431	100	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+432	100	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+433	100	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+434	100	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+435	100	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+436	101	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+437	101	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+438	101	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+439	101	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+440	101	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+441	101	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+442	102	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+443	102	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+444	102	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+445	102	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+446	102	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+447	102	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+448	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+449	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+450	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+451	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+452	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+453	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+454	104	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+455	104	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+456	104	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+457	104	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+458	104	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+459	104	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+460	105	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+461	105	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+462	105	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+463	105	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+464	105	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+465	105	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+466	106	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+467	106	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+468	106	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+469	106	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+470	106	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+471	106	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+472	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+473	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+474	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+475	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+476	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+477	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+478	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+479	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+480	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+481	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+482	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+483	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+484	107	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+485	107	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+486	107	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+487	107	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+488	107	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+489	107	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+490	108	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+491	108	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+492	108	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+493	108	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+494	108	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+495	108	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+496	109	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+497	109	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+498	109	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+499	109	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+500	109	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+501	109	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+502	115	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+503	115	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+504	115	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+505	115	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+506	115	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+507	115	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+508	102	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+509	102	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+510	102	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+511	102	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+512	102	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+513	102	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+514	110	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+515	110	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+516	110	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+517	110	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+518	110	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+519	110	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+520	111	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+521	111	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+522	111	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+523	111	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+524	111	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+525	111	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+526	112	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+527	112	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+528	112	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+529	112	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+530	112	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+531	112	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+532	113	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+533	113	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+534	113	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+535	113	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+536	113	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+537	113	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+538	114	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+539	114	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+540	114	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+541	114	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+542	114	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+543	114	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+544	115	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+545	115	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+546	115	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+547	115	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+548	115	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+549	115	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+550	96	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+551	96	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+552	96	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+553	96	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+554	96	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+555	96	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+556	121	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+557	121	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+558	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+559	121	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+560	121	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+561	121	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+562	116	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+563	116	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+564	116	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+565	116	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+566	116	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+567	116	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+568	117	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+569	117	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+570	117	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+571	117	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+572	117	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+573	117	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+574	118	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+575	118	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+576	118	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+577	118	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+578	118	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+579	118	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+580	60	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+581	60	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+582	60	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+583	60	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+584	60	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+585	60	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+586	119	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+587	119	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+588	119	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+589	119	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+590	119	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+591	119	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+592	120	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+593	120	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+594	120	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+595	120	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+596	120	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+597	120	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+598	121	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+599	121	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+600	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+601	121	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+602	121	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+603	121	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+604	122	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+605	122	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+606	122	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+607	122	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+608	122	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+609	122	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+610	123	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+611	123	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+612	123	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+613	123	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+614	123	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+615	123	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+616	124	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+617	124	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+618	124	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+619	124	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+620	124	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+621	124	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+622	124	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+623	124	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+624	124	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+625	124	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+626	124	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+627	124	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+628	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+629	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+630	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+631	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+632	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+633	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+634	125	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+635	125	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+636	125	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+637	125	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+638	125	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+639	125	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+640	61	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+641	61	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+642	61	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+643	61	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+644	61	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+645	61	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+646	107	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+647	107	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+648	107	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+649	107	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+650	107	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+651	107	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+652	109	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+653	109	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+654	109	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+655	109	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+656	109	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+657	109	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+658	137	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+659	137	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+660	137	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+661	137	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+662	137	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+663	137	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+664	126	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+665	126	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+666	126	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+667	126	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+668	126	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+669	126	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+670	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+671	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+672	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+673	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+674	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+675	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+676	128	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+677	128	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+678	128	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+679	128	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+680	128	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+681	128	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+682	129	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+683	129	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+684	129	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+685	129	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+686	129	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+687	129	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+688	130	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+689	130	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+690	130	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+691	130	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+692	130	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+693	130	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+694	131	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+695	131	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+696	131	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+697	131	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+698	131	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+699	131	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+700	132	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+701	132	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+702	132	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+703	132	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+704	132	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+705	132	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+706	133	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+707	133	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+708	133	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+709	133	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+710	133	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+711	133	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+712	134	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+713	134	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+714	134	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+715	134	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+716	134	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+717	134	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+718	135	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+719	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+720	135	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+721	135	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+722	135	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+723	135	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+724	136	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+725	136	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+726	136	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+727	136	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+728	136	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+729	136	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+730	139	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+731	139	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+732	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+733	139	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+734	139	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+735	139	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+736	137	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+737	137	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+738	137	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+739	137	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+740	137	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+741	137	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+742	138	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+743	138	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+744	138	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+745	138	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+746	138	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+747	138	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+748	139	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+749	139	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+750	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+751	139	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+752	139	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+753	139	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+754	140	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+755	140	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+756	140	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+757	140	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+758	140	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+759	140	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+760	148	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+761	148	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+762	148	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+763	148	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+764	148	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+765	148	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+766	141	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+767	141	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+768	141	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+769	141	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+770	141	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+771	141	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+772	131	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+773	131	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+774	131	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+775	131	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+776	131	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+777	131	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+778	119	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+779	119	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+780	119	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+781	119	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+782	119	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+783	119	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+784	118	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+785	118	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+786	118	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+787	118	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+788	118	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+789	118	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+790	142	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+791	142	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+792	142	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+793	142	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+794	142	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+795	142	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+796	143	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+797	143	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+798	143	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+799	143	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+800	143	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+801	143	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+802	65	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+803	65	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+804	65	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+805	65	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+806	65	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+807	65	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+808	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+809	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+810	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+811	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+812	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+813	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+814	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+815	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+816	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+817	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+818	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+819	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+820	144	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+821	144	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+822	144	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+823	144	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+824	144	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+825	144	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+826	107	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+827	107	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+828	107	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+829	107	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+830	107	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+831	107	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+832	145	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+833	145	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+834	145	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+835	145	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+836	145	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+837	145	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+838	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+839	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+840	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+841	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+842	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+843	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+844	139	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+845	139	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+846	139	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+847	139	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+848	139	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+849	139	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+850	132	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+851	132	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+852	132	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+853	132	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+854	132	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+855	132	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+856	147	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+857	147	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+858	147	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+859	147	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+860	147	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+861	147	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+862	127	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+863	127	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+864	127	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+865	127	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+866	127	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+867	127	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+868	148	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+869	148	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+870	148	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+871	148	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+872	148	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+873	148	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+874	149	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+875	149	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+876	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+877	149	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+878	149	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+879	149	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+880	150	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+881	150	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+882	150	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+883	150	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+884	150	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+885	150	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+886	151	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+887	151	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+888	151	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+889	151	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+890	151	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+891	151	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+892	152	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+893	152	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+894	152	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+895	152	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+896	152	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+897	152	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+898	144	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+899	144	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+900	144	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+901	144	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+902	144	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+903	144	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+904	153	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+905	153	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+906	153	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+907	153	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+908	153	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+909	153	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+910	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+911	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+912	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+913	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+914	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+915	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+916	119	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+917	119	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+918	119	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+919	119	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+920	119	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+921	119	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+922	140	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+923	140	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+924	140	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+925	140	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+926	140	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+927	140	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+928	154	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+929	154	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+930	154	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+931	154	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+932	154	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+933	154	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+934	155	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+935	155	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+936	155	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+937	155	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+938	155	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+939	155	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+940	156	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+941	156	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+942	156	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+943	156	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+944	156	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+945	156	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+946	157	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+947	157	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+948	157	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+949	157	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+950	157	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+951	157	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+952	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+953	100	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+954	100	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+955	100	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+956	100	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+957	100	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+958	135	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+959	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+960	135	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+961	135	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+962	135	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+963	135	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+964	158	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+965	158	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+966	158	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+967	158	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+968	158	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+969	158	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+970	156	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+971	156	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+972	156	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+973	156	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+974	156	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+975	156	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+976	63	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+977	63	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+978	63	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+979	63	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+980	63	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+981	63	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+982	135	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+983	135	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+984	135	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+985	135	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+986	135	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+987	135	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+988	129	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+989	129	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+990	129	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+991	129	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+992	129	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+993	129	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+994	120	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+995	120	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+996	120	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+997	120	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+998	120	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+999	120	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1000	114	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1001	114	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1002	114	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1003	114	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1004	114	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1005	114	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1006	159	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1007	159	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1008	159	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1009	159	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1010	159	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1011	159	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1012	140	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1013	140	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1014	140	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1015	140	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1016	140	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1017	140	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1018	160	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1019	160	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1020	160	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1021	160	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1022	160	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1023	160	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1024	161	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1025	161	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1026	161	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1027	161	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1028	161	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1029	161	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1030	162	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1031	162	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1032	162	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1033	162	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1034	162	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1035	162	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1036	163	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1037	163	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1038	163	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1039	163	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1040	163	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1041	163	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1042	164	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1043	164	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1044	164	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1045	164	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1046	164	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1047	164	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1048	11	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1049	11	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1050	11	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1051	11	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1052	11	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1053	11	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1054	165	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1055	165	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1056	165	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1057	165	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1058	165	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1059	165	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1060	166	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1061	166	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1062	166	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1063	166	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1064	166	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1065	166	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1066	145	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1067	145	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1068	145	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1069	145	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1070	145	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1071	145	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1072	149	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1073	149	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1074	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1075	149	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1076	149	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1077	149	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1078	178	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1079	178	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1080	178	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1081	178	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1082	178	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1083	178	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1084	167	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1085	167	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1086	167	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1087	167	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1088	167	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1089	167	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1090	146	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1091	146	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1092	146	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1093	146	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1094	146	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1095	146	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1096	104	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1097	104	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1098	104	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1099	104	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1100	104	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1101	104	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1102	168	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1103	168	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1104	168	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1105	168	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1106	168	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1107	168	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1108	169	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1109	169	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1110	169	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1111	169	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1112	169	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1113	169	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1114	166	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1115	166	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1116	166	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1117	166	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1118	166	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1119	166	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1120	170	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1121	170	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1122	170	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1123	170	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1124	170	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1125	170	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1126	138	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1127	138	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1128	138	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1129	138	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1130	138	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1131	138	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1132	171	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1133	171	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1134	171	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1135	171	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1136	171	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1137	171	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1138	172	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1139	172	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1140	172	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1141	172	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1142	172	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1143	172	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1144	173	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1145	173	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1146	173	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1147	173	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1148	173	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1149	173	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1150	97	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1151	97	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1152	97	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1153	97	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1154	97	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1155	97	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1156	174	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1157	174	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1158	174	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1159	174	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1160	174	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1161	174	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1162	122	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1163	122	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1164	122	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1165	122	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1166	122	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1167	122	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1168	121	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1169	121	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1170	121	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1171	121	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1172	121	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1173	121	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1174	174	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1175	174	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1176	174	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1177	174	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1178	174	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1179	174	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1180	141	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1181	141	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1182	141	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1183	141	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1184	141	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1185	141	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1186	175	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1187	175	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1188	175	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1189	175	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1190	175	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1191	175	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1192	112	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1193	112	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1194	112	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1195	112	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1196	112	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1197	112	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1198	125	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1199	125	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1200	125	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1201	125	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1202	125	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1203	125	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1204	176	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1205	176	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1206	176	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1207	176	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1208	176	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1209	176	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1210	177	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1211	177	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1212	177	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1213	177	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1214	177	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1215	177	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1216	149	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1217	149	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1218	149	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1219	149	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1220	149	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1221	149	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1222	178	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1223	178	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1224	178	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1225	178	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1226	178	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1227	178	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1228	98	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1229	98	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1230	98	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1231	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1232	98	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1233	98	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1234	179	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1235	179	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1236	179	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1237	179	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1238	179	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1239	179	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1240	165	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1241	165	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1242	165	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1243	165	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1244	165	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1245	165	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1246	171	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1247	171	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1248	171	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1249	171	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1250	171	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1251	171	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1252	98	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1253	98	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1254	98	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1255	98	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1256	98	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1257	98	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1258	104	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1259	104	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1260	104	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1261	104	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1262	104	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1263	104	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1264	180	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1265	180	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1266	180	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1267	180	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1268	180	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1269	180	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1270	100	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1271	100	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1272	100	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1273	100	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1274	100	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1275	100	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1276	103	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1277	103	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1278	103	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1279	103	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1280	103	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1281	103	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1282	49	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1283	49	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1284	49	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1285	49	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1286	49	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1287	49	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1288	59	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1289	59	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1290	59	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1291	59	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1292	59	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1293	59	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1294	59	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1295	59	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1296	59	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1297	59	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1298	59	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1299	59	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1300	77	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1301	77	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1302	77	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1303	77	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1304	77	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1305	77	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1306	41	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1307	41	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1308	41	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1309	41	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1310	41	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1311	41	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1312	90	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1313	90	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1314	90	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1315	90	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1316	90	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1317	90	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1318	90	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1319	90	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1320	90	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1321	90	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1322	90	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1323	90	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1324	57	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1325	57	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1326	57	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1327	57	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1328	57	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1329	57	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1330	53	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1331	53	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1332	53	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1333	53	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1334	53	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1335	53	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1336	20	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1337	20	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1338	20	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1339	20	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1340	20	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1341	20	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1342	24	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1343	24	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1344	24	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1345	24	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1346	24	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1347	24	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1348	93	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1349	93	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1350	93	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1351	93	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1352	93	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1353	93	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1354	31	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1355	31	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1356	31	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1357	31	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1358	31	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1359	31	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1360	50	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1361	50	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1362	50	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1363	50	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1364	50	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1365	50	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1366	87	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1367	87	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1368	87	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1369	87	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1370	87	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1371	87	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1372	87	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1373	87	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1374	87	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1375	87	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1376	87	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1377	87	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1378	181	\N	196	\N	\N	Estad├¡a de habitaci├│n	568.09	4	2272.36	0.00	0.00	2272.36
+1379	181	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+1380	181	2	\N	\N	\N	Masaje Relajante 60 min	45.00	1	45.00	0.00	0.00	45.00
+1381	181	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1382	182	\N	809	\N	\N	Estad├¡a de habitaci├│n	377.14	4	1508.56	0.00	0.00	1508.56
+1383	182	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1384	182	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1385	182	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1386	183	\N	570	\N	\N	Estad├¡a de habitaci├│n	224.96	4	899.84	0.00	0.00	899.84
+1387	183	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+1388	183	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1389	183	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1390	184	\N	198	\N	\N	Estad├¡a de habitaci├│n	473.03	2	946.06	0.00	0.00	946.06
+1391	184	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1392	184	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1393	184	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1394	185	\N	547	\N	\N	Estad├¡a de habitaci├│n	612.81	6	3676.86	0.00	0.00	3676.86
+1395	185	4	\N	\N	\N	Servicio a la Habitaci??n	10.00	1	10.00	0.00	0.00	10.00
+1396	185	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+1397	185	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1398	186	\N	729	\N	\N	Estad├¡a de habitaci├│n	696.78	2	1393.56	0.00	0.00	1393.56
+1399	186	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+1400	186	7	\N	\N	\N	Alquiler de Bicicleta	12.00	1	12.00	0.00	0.00	12.00
+1401	186	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+1402	187	\N	97	\N	\N	Estad├¡a de habitaci├│n	316.30	4	1265.20	0.00	0.00	1265.20
+1403	187	5	\N	\N	\N	Tour Guiado Volcanes	60.00	1	60.00	0.00	0.00	60.00
+1404	187	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+1405	187	1	\N	\N	\N	Desayuno Buffet	15.00	1	15.00	0.00	0.00	15.00
+1406	188	\N	151	\N	\N	Estad├¡a de habitaci├│n	110.54	3	331.62	0.00	0.00	331.62
+1407	188	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1408	188	10	\N	\N	\N	Estacionamiento Valet	32.00	1	32.00	0.00	0.00	32.00
+1409	188	8	\N	\N	\N	Clase de Surf Privada	25.00	1	25.00	0.00	0.00	25.00
+1410	189	\N	121	\N	\N	Estad├¡a de habitaci├│n	694.55	5	3472.75	0.00	0.00	3472.75
+1411	189	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1412	189	3	\N	\N	\N	Transporte Aeropuerto	35.00	1	35.00	0.00	0.00	35.00
+1413	189	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1414	190	\N	349	\N	\N	Estad├¡a de habitaci├│n	146.04	5	730.20	0.00	0.00	730.20
+1415	190	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+1416	190	9	\N	\N	\N	Cena Rom??ntica en Playa	80.00	1	80.00	0.00	0.00	80.00
+1417	190	6	\N	\N	\N	Lavander??a (por libra)	41.00	1	41.00	0.00	0.00	41.00
+\.
+
+
+--
+-- TOC entry 5346 (class 0 OID 31058)
+-- Dependencies: 225
+-- Data for Name: detalle_reservacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.detalle_reservacion (id_detalle_reservacion, id_reservacion, id_habitacion, cant_huespedes, fecha_entrada, fecha_salida) FROM stdin;
 1	680	649	7	2026-02-12	2026-02-14
@@ -4202,6 +6966,13 @@ COPY public.detalle_reservacion (id_detalle_reservacion, id_reservacion, id_habi
 1395	1010	349	2	2025-08-09	2025-08-14
 \.
 
+
+--
+-- TOC entry 5356 (class 0 OID 31152)
+-- Dependencies: 236
+-- Data for Name: empleado; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.empleado (id_empleado, id_tipo_empleado, nombre, correo, telefono, dui, salario) FROM stdin;
 1	9	Wallache Reading	wreading0@mit.edu	+50365647572	02545831-6	503.42
 2	6	Tatum Frayn	tfrayn1@storify.com	+50374851477	31296321-4	738.51
@@ -4755,6 +7526,13 @@ COPY public.empleado (id_empleado, id_tipo_empleado, nombre, correo, telefono, d
 550	8	Ab Partridge	apartridgef9@skyrock.com	+50376579238	39620785-2	1229.74
 \.
 
+
+--
+-- TOC entry 5347 (class 0 OID 31069)
+-- Dependencies: 226
+-- Data for Name: estadia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.estadia (id_estadia, id_reservacion, checkin, checkout) FROM stdin;
 1001	1001	2025-10-24 09:23:38.724962	2025-10-28 09:23:38.724962
 1002	1002	2025-04-16 12:45:44.95173	2025-04-20 12:45:44.95173
@@ -4948,6 +7726,13 @@ COPY public.estadia (id_estadia, id_reservacion, checkin, checkout) FROM stdin;
 995	995	2025-01-23 19:04:06	2025-02-03 19:04:06
 \.
 
+
+--
+-- TOC entry 5348 (class 0 OID 31077)
+-- Dependencies: 227
+-- Data for Name: factura; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.factura (id_factura, id_empleado, id_huesped, id_estadia, fecha, metodo_pago, total_a_pagar) FROM stdin;
 181	244	838	1001	2025-10-28 09:23:38.724962	TARJETA	2384.36
 182	289	143	1002	2025-04-20 12:45:44.95173	TARJETA	1574.56
@@ -5140,6 +7925,13 @@ COPY public.factura (id_factura, id_empleado, id_huesped, id_estadia, fecha, met
 179	477	941	838	2025-06-28 21:33:04	TARJETA	2305.61
 180	208	995	404	2025-11-09 10:58:18	TRANSFERENCIA	2701.60
 \.
+
+
+--
+-- TOC entry 5349 (class 0 OID 31090)
+-- Dependencies: 228
+-- Data for Name: habitacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.habitacion (id_habitacion, id_hotel, nivel, numero_habitacion, id_tipo_habitacion, precio, estado, capacidad_maxima, descripcion) FROM stdin;
 9	1	6	1609	8	518.22	OCUPADA	6	Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Duis faucibus accumsan odio. Curabitur convallis.
@@ -6120,11 +8912,25 @@ COPY public.habitacion (id_habitacion, id_hotel, nivel, numero_habitacion, id_ti
 910	2	1	5010	1	98.00	DISPONIBLE	1	Vivamus tortor. Duis mattis egestas metus.
 \.
 
+
+--
+-- TOC entry 5350 (class 0 OID 31108)
+-- Dependencies: 229
+-- Data for Name: hotel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.hotel (id_hotel, nombre, direccion, niveles_edificios, calificacion, descripcion) FROM stdin;
 1	Hotel Costa Azul	Playa El Tunco, La Libertad	4	3.2	Resort frente a la playa con piscina infinita
 2	Mirador San Salvador	Colonia Escal??n, San Salvador	10	3.1	Hotel de lujo con vista panor??mica a la ciudad
 3	Posada del Volc??n	Parque Nacional El Boquer??n	2	3.2	Caba??as r??sticas inmersas en la naturaleza
 \.
+
+
+--
+-- TOC entry 5362 (class 0 OID 31170)
+-- Dependencies: 242
+-- Data for Name: huesped; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.huesped (id_huesped, nombre, correo, telefono, documento, tipo_documento) FROM stdin;
 1	Celisse	cmishaw0@mtv.com	+503 7839-5005	61184475-9	DUI
@@ -7129,6 +9935,13 @@ COPY public.huesped (id_huesped, nombre, correo, telefono, documento, tipo_docum
 1000	Dunc	diuorio8b@skyrock.com	+503 2132-8253	K67150409	PASAPORTE
 \.
 
+
+--
+-- TOC entry 5364 (class 0 OID 31185)
+-- Dependencies: 244
+-- Data for Name: resenia; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.resenia (id_resenia, id_estadia, id_huesped, calificacion, comentario) FROM stdin;
 9	9	685	2.7	Curabitur gravida nisi at nibh. In hac habitasse platea dictumst.
 11	11	53	2.0	Etiam pretium iaculis justo. In hac habitasse platea dictumst. Etiam faucibus cursus urna.
@@ -7311,6 +10124,13 @@ COPY public.resenia (id_resenia, id_estadia, id_huesped, calificacion, comentari
 851	851	322	2.8	In blandit ultrices enim. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
 468	468	914	2.8	Integer ac neque. Duis bibendum. Morbi non quam nec dui luctus rutrum.
 \.
+
+
+--
+-- TOC entry 5366 (class 0 OID 31195)
+-- Dependencies: 246
+-- Data for Name: reservacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.reservacion (id_reservacion, id_empleado, id_huesped, cant_huespedes_totales, estado) FROM stdin;
 3	253	443	4	RECHAZADA
@@ -8325,6 +11145,13 @@ COPY public.reservacion (id_reservacion, id_empleado, id_huesped, cant_huespedes
 1010	327	403	2	COMPLETADA
 \.
 
+
+--
+-- TOC entry 5368 (class 0 OID 31206)
+-- Dependencies: 248
+-- Data for Name: servicio; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.servicio (id_servicio, tipo_servicio, precio) FROM stdin;
 1	Desayuno Buffet	15.00
 2	Masaje Relajante 60 min	45.00
@@ -8337,6 +11164,13 @@ COPY public.servicio (id_servicio, tipo_servicio, precio) FROM stdin;
 6	Lavander??a (por libra)	41.00
 10	Estacionamiento Valet	32.00
 \.
+
+
+--
+-- TOC entry 5371 (class 0 OID 31224)
+-- Dependencies: 252
+-- Data for Name: tipo_comodidad; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.tipo_comodidad (id_tipo_comodidad, tipo_comodidad) FROM stdin;
 1	Aire Acondicionado
@@ -8351,6 +11185,13 @@ COPY public.tipo_comodidad (id_tipo_comodidad, tipo_comodidad) FROM stdin;
 10	Tina de Ba??o de Inmersi??n
 \.
 
+
+--
+-- TOC entry 5373 (class 0 OID 31230)
+-- Dependencies: 254
+-- Data for Name: tipo_empleado; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY public.tipo_empleado (id_tipo_empleado, tipo_empleado) FROM stdin;
 1	Recepcionista
 2	Gerente General
@@ -8363,6 +11204,13 @@ COPY public.tipo_empleado (id_tipo_empleado, tipo_empleado) FROM stdin;
 9	Guardia de Seguridad
 10	Valet Parking
 \.
+
+
+--
+-- TOC entry 5370 (class 0 OID 31214)
+-- Dependencies: 250
+-- Data for Name: tipo_habitacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY public.tipo_habitacion (id_tipo_habitacion, tipo_habitacion) FROM stdin;
 1	Individual Est??ndar
@@ -8377,39 +11225,712 @@ COPY public.tipo_habitacion (id_tipo_habitacion, tipo_habitacion) FROM stdin;
 10	Penthouse
 \.
 
+
+--
+-- TOC entry 5381 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: aumento_costos_id_aumento_costo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.aumento_costos_id_aumento_costo_seq', 10, true);
+
+
+--
+-- TOC entry 5382 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: comodidad_tipo_habitacion_id_comodidad_habitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.comodidad_tipo_habitacion_id_comodidad_habitacion_seq', 976, true);
 
+
+--
+-- TOC entry 5383 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: consumo_servicio_id_consumo_servicio_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.consumo_servicio_id_consumo_servicio_seq', 5524, true);
+
+
+--
+-- TOC entry 5384 (class 0 OID 0)
+-- Dependencies: 232
+-- Name: descuento_id_descuento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.descuento_id_descuento_seq', 10, true);
 
+
+--
+-- TOC entry 5385 (class 0 OID 0)
+-- Dependencies: 234
+-- Name: detalle_factura_id_detalle_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.detalle_factura_id_detalle_factura_seq', 1417, true);
+
+
+--
+-- TOC entry 5386 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: detalle_reservacion_id_detalle_reservacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.detalle_reservacion_id_detalle_reservacion_seq', 1395, true);
 
+
+--
+-- TOC entry 5387 (class 0 OID 0)
+-- Dependencies: 237
+-- Name: empleado_id_empleado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.empleado_id_empleado_seq', 550, true);
+
+
+--
+-- TOC entry 5388 (class 0 OID 0)
+-- Dependencies: 238
+-- Name: estadia_id_estadia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.estadia_id_estadia_seq', 1010, true);
 
+
+--
+-- TOC entry 5389 (class 0 OID 0)
+-- Dependencies: 239
+-- Name: factura_id_factura_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.factura_id_factura_seq', 190, true);
+
+
+--
+-- TOC entry 5390 (class 0 OID 0)
+-- Dependencies: 240
+-- Name: habitacion_id_habitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.habitacion_id_habitacion_seq', 976, true);
 
+
+--
+-- TOC entry 5391 (class 0 OID 0)
+-- Dependencies: 241
+-- Name: hotel_id_hotel_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.hotel_id_hotel_seq', 10, true);
+
+
+--
+-- TOC entry 5392 (class 0 OID 0)
+-- Dependencies: 243
+-- Name: huesped_id_huesped_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.huesped_id_huesped_seq', 1000, true);
 
+
+--
+-- TOC entry 5393 (class 0 OID 0)
+-- Dependencies: 245
+-- Name: resenia_id_resenia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.resenia_id_resenia_seq', 1000, true);
+
+
+--
+-- TOC entry 5394 (class 0 OID 0)
+-- Dependencies: 247
+-- Name: reservacion_id_reservacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.reservacion_id_reservacion_seq', 1010, true);
 
+
+--
+-- TOC entry 5395 (class 0 OID 0)
+-- Dependencies: 249
+-- Name: servicio_id_servicio_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.servicio_id_servicio_seq', 10, true);
+
+
+--
+-- TOC entry 5396 (class 0 OID 0)
+-- Dependencies: 253
+-- Name: tipo_comodidad_id_tipo_comodidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.tipo_comodidad_id_tipo_comodidad_seq', 10, true);
 
+
+--
+-- TOC entry 5397 (class 0 OID 0)
+-- Dependencies: 255
+-- Name: tipo_empleado_id_tipo_empleado_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('public.tipo_empleado_id_tipo_empleado_seq', 10, true);
+
+
+--
+-- TOC entry 5398 (class 0 OID 0)
+-- Dependencies: 256
+-- Name: tipo_habitacion_id_tipo_habitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
 
 SELECT pg_catalog.setval('public.tipo_habitacion_id_tipo_habitacion_seq', 10, true);
 
+
+--
+-- TOC entry 5082 (class 2606 OID 31273)
+-- Name: aumento_costos pk_aumento_costo; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.aumento_costos
+    ADD CONSTRAINT pk_aumento_costo PRIMARY KEY (id_aumento_costo);
+
+
+--
+-- TOC entry 5086 (class 2606 OID 31275)
+-- Name: comodidad_tipo_habitacion pk_comodidad_tipo_habitacion; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comodidad_tipo_habitacion
+    ADD CONSTRAINT pk_comodidad_tipo_habitacion PRIMARY KEY (id_comodidad_habitacion);
+
+
+--
+-- TOC entry 5088 (class 2606 OID 31277)
+-- Name: consumo_servicio pk_consumo_servicio; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.consumo_servicio
+    ADD CONSTRAINT pk_consumo_servicio PRIMARY KEY (id_consumo_servicio);
+
+
+--
+-- TOC entry 5106 (class 2606 OID 31279)
+-- Name: descuento pk_descuento; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.descuento
+    ADD CONSTRAINT pk_descuento PRIMARY KEY (id_descuento);
+
+
+--
+-- TOC entry 5108 (class 2606 OID 31281)
+-- Name: detalle_factura pk_detalle_factura; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_factura
+    ADD CONSTRAINT pk_detalle_factura PRIMARY KEY (id_detalle_factura);
+
+
+--
+-- TOC entry 5090 (class 2606 OID 31283)
+-- Name: detalle_reservacion pk_detalle_reservacion; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_reservacion
+    ADD CONSTRAINT pk_detalle_reservacion PRIMARY KEY (id_detalle_reservacion);
+
+
+--
+-- TOC entry 5110 (class 2606 OID 31285)
+-- Name: empleado pk_empleado; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.empleado
+    ADD CONSTRAINT pk_empleado PRIMARY KEY (id_empleado);
+
+
+--
+-- TOC entry 5092 (class 2606 OID 31287)
+-- Name: estadia pk_estadia; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estadia
+    ADD CONSTRAINT pk_estadia PRIMARY KEY (id_estadia);
+
+
+--
+-- TOC entry 5094 (class 2606 OID 31289)
+-- Name: factura pk_factura; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.factura
+    ADD CONSTRAINT pk_factura PRIMARY KEY (id_factura);
+
+
+--
+-- TOC entry 5098 (class 2606 OID 31291)
+-- Name: habitacion pk_habitacion; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.habitacion
+    ADD CONSTRAINT pk_habitacion PRIMARY KEY (id_habitacion);
+
+
+--
+-- TOC entry 5102 (class 2606 OID 31293)
+-- Name: hotel pk_hotel; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.hotel
+    ADD CONSTRAINT pk_hotel PRIMARY KEY (id_hotel);
+
+
+--
+-- TOC entry 5116 (class 2606 OID 31295)
+-- Name: huesped pk_huesped; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.huesped
+    ADD CONSTRAINT pk_huesped PRIMARY KEY (id_huesped);
+
+
+--
+-- TOC entry 5122 (class 2606 OID 31297)
+-- Name: resenia pk_resenia; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resenia
+    ADD CONSTRAINT pk_resenia PRIMARY KEY (id_resenia);
+
+
+--
+-- TOC entry 5126 (class 2606 OID 31299)
+-- Name: reservacion pk_reservacion; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reservacion
+    ADD CONSTRAINT pk_reservacion PRIMARY KEY (id_reservacion);
+
+
+--
+-- TOC entry 5128 (class 2606 OID 31301)
+-- Name: servicio pk_servicio; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.servicio
+    ADD CONSTRAINT pk_servicio PRIMARY KEY (id_servicio);
+
+
+--
+-- TOC entry 5136 (class 2606 OID 31303)
+-- Name: tipo_comodidad pk_tipo_comodidad; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tipo_comodidad
+    ADD CONSTRAINT pk_tipo_comodidad PRIMARY KEY (id_tipo_comodidad);
+
+
+--
+-- TOC entry 5140 (class 2606 OID 31305)
+-- Name: tipo_empleado pk_tipo_empleado; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tipo_empleado
+    ADD CONSTRAINT pk_tipo_empleado PRIMARY KEY (id_tipo_empleado);
+
+
+--
+-- TOC entry 5132 (class 2606 OID 31307)
+-- Name: tipo_habitacion pk_tipo_habitacion; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tipo_habitacion
+    ADD CONSTRAINT pk_tipo_habitacion PRIMARY KEY (id_tipo_habitacion);
+
+
+--
+-- TOC entry 5118 (class 2606 OID 31309)
+-- Name: huesped uq_correo; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.huesped
+    ADD CONSTRAINT uq_correo UNIQUE (correo);
+
+
+--
+-- TOC entry 5112 (class 2606 OID 31311)
+-- Name: empleado uq_correo_empleado; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.empleado
+    ADD CONSTRAINT uq_correo_empleado UNIQUE (correo);
+
+
+--
+-- TOC entry 5120 (class 2606 OID 31313)
+-- Name: huesped uq_documento; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.huesped
+    ADD CONSTRAINT uq_documento UNIQUE (documento);
+
+
+--
+-- TOC entry 5114 (class 2606 OID 31315)
+-- Name: empleado uq_dui; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.empleado
+    ADD CONSTRAINT uq_dui UNIQUE (dui);
+
+
+--
+-- TOC entry 5096 (class 2606 OID 31317)
+-- Name: factura uq_empleado_huesped_estadia; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.factura
+    ADD CONSTRAINT uq_empleado_huesped_estadia UNIQUE (id_empleado, id_huesped, id_estadia);
+
+
+--
+-- TOC entry 5100 (class 2606 OID 31319)
+-- Name: habitacion uq_hotel_nivel_numhab; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.habitacion
+    ADD CONSTRAINT uq_hotel_nivel_numhab UNIQUE (id_hotel, nivel, numero_habitacion);
+
+
+--
+-- TOC entry 5104 (class 2606 OID 31321)
+-- Name: hotel uq_nombre; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.hotel
+    ADD CONSTRAINT uq_nombre UNIQUE (nombre);
+
+
+--
+-- TOC entry 5084 (class 2606 OID 31323)
+-- Name: aumento_costos uq_nombre_temp; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.aumento_costos
+    ADD CONSTRAINT uq_nombre_temp UNIQUE (nombre_temporada);
+
+
+--
+-- TOC entry 5124 (class 2606 OID 31325)
+-- Name: resenia uq_resenia_huesped; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resenia
+    ADD CONSTRAINT uq_resenia_huesped UNIQUE (id_estadia, id_huesped);
+
+
+--
+-- TOC entry 5138 (class 2606 OID 31327)
+-- Name: tipo_comodidad uq_tipo_comodidad; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tipo_comodidad
+    ADD CONSTRAINT uq_tipo_comodidad UNIQUE (tipo_comodidad);
+
+
+--
+-- TOC entry 5142 (class 2606 OID 31329)
+-- Name: tipo_empleado uq_tipo_empleado; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tipo_empleado
+    ADD CONSTRAINT uq_tipo_empleado UNIQUE (tipo_empleado);
+
+
+--
+-- TOC entry 5134 (class 2606 OID 31331)
+-- Name: tipo_habitacion uq_tipo_habitacion; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tipo_habitacion
+    ADD CONSTRAINT uq_tipo_habitacion UNIQUE (tipo_habitacion);
+
+
+--
+-- TOC entry 5130 (class 2606 OID 31333)
+-- Name: servicio uq_tipo_servicio; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.servicio
+    ADD CONSTRAINT uq_tipo_servicio UNIQUE (tipo_servicio);
+
+
+--
+-- TOC entry 5331 (class 2618 OID 31485)
+-- Name: v_info_general_hoteles _RETURN; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE VIEW public.v_info_general_hoteles AS
+ SELECT h.nombre AS hotel,
+    h.calificacion,
+    count(DISTINCT h2.id_habitacion) AS cant_habitaciones,
+    COALESCE(sum(df.precio_total), 0.00) AS ganancias
+   FROM (((public.hotel h
+     LEFT JOIN public.habitacion h2 ON ((h.id_hotel = h2.id_hotel)))
+     LEFT JOIN public.detalle_factura df ON ((h2.id_habitacion = df.id_habitacion)))
+     LEFT JOIN public.factura f ON ((df.id_factura = f.id_factura)))
+  GROUP BY h.id_hotel, h.nombre, h.calificacion;
+
+
+--
+-- TOC entry 5168 (class 2620 OID 31536)
+-- Name: habitacion tg_check_nivel_habitacion; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER tg_check_nivel_habitacion BEFORE INSERT OR UPDATE ON public.habitacion FOR EACH ROW EXECUTE FUNCTION public.fn_validar_nivel_habitacion();
+
+
+--
+-- TOC entry 5169 (class 2620 OID 31529)
+-- Name: resenia trg_actualizar_calificacion; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_actualizar_calificacion AFTER INSERT OR UPDATE ON public.resenia FOR EACH ROW EXECUTE FUNCTION public.fn_actualizar_calificacion_hotel();
+
+
+--
+-- TOC entry 5167 (class 2620 OID 31533)
+-- Name: estadia trg_checkout_factura; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_checkout_factura AFTER UPDATE OF checkout ON public.estadia FOR EACH ROW EXECUTE FUNCTION public.fn_generar_factura_checkout();
+
+
+--
+-- TOC entry 5166 (class 2620 OID 31527)
+-- Name: detalle_reservacion trg_verificar_reserva; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_verificar_reserva BEFORE INSERT OR UPDATE ON public.detalle_reservacion FOR EACH ROW EXECUTE FUNCTION public.fn_validar_disponibilidad_habitacion();
+
+
+--
+-- TOC entry 5156 (class 2606 OID 31335)
+-- Name: detalle_factura fk_aumento_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_factura
+    ADD CONSTRAINT fk_aumento_detalle FOREIGN KEY (id_aumento_costo) REFERENCES public.aumento_costos(id_aumento_costo) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5157 (class 2606 OID 31340)
+-- Name: detalle_factura fk_descuento_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_factura
+    ADD CONSTRAINT fk_descuento_detalle FOREIGN KEY (id_descuento) REFERENCES public.descuento(id_descuento) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5164 (class 2606 OID 31345)
+-- Name: reservacion fk_empleado; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reservacion
+    ADD CONSTRAINT fk_empleado FOREIGN KEY (id_empleado) REFERENCES public.empleado(id_empleado) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5151 (class 2606 OID 31350)
+-- Name: factura fk_empleado_factura; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.factura
+    ADD CONSTRAINT fk_empleado_factura FOREIGN KEY (id_empleado) REFERENCES public.empleado(id_empleado) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5162 (class 2606 OID 31355)
+-- Name: resenia fk_estadia; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resenia
+    ADD CONSTRAINT fk_estadia FOREIGN KEY (id_estadia) REFERENCES public.estadia(id_estadia) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5145 (class 2606 OID 31360)
+-- Name: consumo_servicio fk_estadia_consumo; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.consumo_servicio
+    ADD CONSTRAINT fk_estadia_consumo FOREIGN KEY (id_estadia) REFERENCES public.estadia(id_estadia) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5152 (class 2606 OID 31365)
+-- Name: factura fk_estadia_factura; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.factura
+    ADD CONSTRAINT fk_estadia_factura FOREIGN KEY (id_estadia) REFERENCES public.estadia(id_estadia) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5158 (class 2606 OID 31370)
+-- Name: detalle_factura fk_factura_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_factura
+    ADD CONSTRAINT fk_factura_detalle FOREIGN KEY (id_factura) REFERENCES public.factura(id_factura) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5146 (class 2606 OID 31375)
+-- Name: consumo_servicio fk_habitacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.consumo_servicio
+    ADD CONSTRAINT fk_habitacion FOREIGN KEY (id_habitacion) REFERENCES public.habitacion(id_habitacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5148 (class 2606 OID 31380)
+-- Name: detalle_reservacion fk_habitacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_reservacion
+    ADD CONSTRAINT fk_habitacion FOREIGN KEY (id_habitacion) REFERENCES public.habitacion(id_habitacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5159 (class 2606 OID 31385)
+-- Name: detalle_factura fk_habitacion_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_factura
+    ADD CONSTRAINT fk_habitacion_detalle FOREIGN KEY (id_habitacion) REFERENCES public.habitacion(id_habitacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5154 (class 2606 OID 31390)
+-- Name: habitacion fk_hotel; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.habitacion
+    ADD CONSTRAINT fk_hotel FOREIGN KEY (id_hotel) REFERENCES public.hotel(id_hotel) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5163 (class 2606 OID 31395)
+-- Name: resenia fk_huesped; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.resenia
+    ADD CONSTRAINT fk_huesped FOREIGN KEY (id_huesped) REFERENCES public.huesped(id_huesped) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5165 (class 2606 OID 31400)
+-- Name: reservacion fk_huesped; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reservacion
+    ADD CONSTRAINT fk_huesped FOREIGN KEY (id_huesped) REFERENCES public.huesped(id_huesped) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5153 (class 2606 OID 31405)
+-- Name: factura fk_huesped_factura; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.factura
+    ADD CONSTRAINT fk_huesped_factura FOREIGN KEY (id_huesped) REFERENCES public.huesped(id_huesped) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5149 (class 2606 OID 31410)
+-- Name: detalle_reservacion fk_reservacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_reservacion
+    ADD CONSTRAINT fk_reservacion FOREIGN KEY (id_reservacion) REFERENCES public.reservacion(id_reservacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5150 (class 2606 OID 31415)
+-- Name: estadia fk_reservacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estadia
+    ADD CONSTRAINT fk_reservacion FOREIGN KEY (id_reservacion) REFERENCES public.reservacion(id_reservacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5147 (class 2606 OID 31420)
+-- Name: consumo_servicio fk_servicio; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.consumo_servicio
+    ADD CONSTRAINT fk_servicio FOREIGN KEY (id_servicio) REFERENCES public.servicio(id_servicio) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5160 (class 2606 OID 31425)
+-- Name: detalle_factura fk_servicio_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.detalle_factura
+    ADD CONSTRAINT fk_servicio_detalle FOREIGN KEY (id_servicio) REFERENCES public.servicio(id_servicio) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5143 (class 2606 OID 31430)
+-- Name: comodidad_tipo_habitacion fk_tipo_comodidad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comodidad_tipo_habitacion
+    ADD CONSTRAINT fk_tipo_comodidad FOREIGN KEY (id_tipo_comodidad) REFERENCES public.tipo_comodidad(id_tipo_comodidad);
+
+
+--
+-- TOC entry 5161 (class 2606 OID 31435)
+-- Name: empleado fk_tipo_empleado; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.empleado
+    ADD CONSTRAINT fk_tipo_empleado FOREIGN KEY (id_tipo_empleado) REFERENCES public.tipo_empleado(id_tipo_empleado) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5144 (class 2606 OID 31440)
+-- Name: comodidad_tipo_habitacion fk_tipo_habitacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comodidad_tipo_habitacion
+    ADD CONSTRAINT fk_tipo_habitacion FOREIGN KEY (id_tipo_habitacion) REFERENCES public.tipo_habitacion(id_tipo_habitacion);
+
+
+--
+-- TOC entry 5155 (class 2606 OID 31445)
+-- Name: habitacion fk_tipo_habitacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.habitacion
+    ADD CONSTRAINT fk_tipo_habitacion FOREIGN KEY (id_tipo_habitacion) REFERENCES public.tipo_habitacion(id_tipo_habitacion) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+-- Completed on 2026-06-20 23:23:41
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict DrF9YcJq10JHFoatMdUQRUb7WLoRMhuWfhjhO526eocQNwsWGNZbcGGJPlO8ecc
+
+
+-- APPENDED BY FIX SCRIPT
+SET session_replication_role = 'origin';

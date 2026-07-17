@@ -802,16 +802,16 @@ CREATE VIEW public.datos_generales_hoteles AS
     hot.direccion,
     hot.niveles_edificios,
     hot.descripcion,
-    h.habitaciones_totales,
-    h.habitaciones_disponibles,
-    h.habitaciones_ocupadas,
-    h.habitaciones_mantenimiento,
+    COALESCE(h.habitaciones_totales, 0) AS habitaciones_totales,
+    COALESCE(h.habitaciones_disponibles, 0) AS habitaciones_disponibles,
+    COALESCE(h.habitaciones_ocupadas, 0) AS habitaciones_ocupadas,
+    COALESCE(h.habitaciones_mantenimiento, 0) AS habitaciones_mantenimiento,
     COALESCE(pa.ganancia_promedio_anual, 0.00) AS ganancia_promedio_anual,
     COALESCE(pm.ganancia_promedio_mensual, 0.00) AS ganancia_promedio_mensual
    FROM (((public.hotel hot
      LEFT JOIN promedio_anual pa ON ((hot.id_hotel = pa.id_hotel)))
      LEFT JOIN promedio_mensual pm ON ((hot.id_hotel = pm.id_hotel)))
-     JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
+     LEFT JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
   ORDER BY hot.calificacion DESC;
 
 
@@ -1318,16 +1318,16 @@ CREATE VIEW public.v_datos_generales_hoteles AS
     hot.direccion,
     hot.niveles_edificios,
     hot.descripcion,
-    h.habitaciones_totales,
-    h.habitaciones_disponibles,
-    h.habitaciones_ocupadas,
-    h.habitaciones_mantenimiento,
+    COALESCE(h.habitaciones_totales, 0) AS habitaciones_totales,
+    COALESCE(h.habitaciones_disponibles, 0) AS habitaciones_disponibles,
+    COALESCE(h.habitaciones_ocupadas, 0) AS habitaciones_ocupadas,
+    COALESCE(h.habitaciones_mantenimiento, 0) AS habitaciones_mantenimiento,
     COALESCE(pa.ganancia_promedio_anual, 0.00) AS ganancia_promedio_anual,
     COALESCE(pm.ganancia_promedio_mensual, 0.00) AS ganancia_promedio_mensual
    FROM (((public.hotel hot
      LEFT JOIN promedio_anual pa ON ((hot.id_hotel = pa.id_hotel)))
      LEFT JOIN promedio_mensual pm ON ((hot.id_hotel = pm.id_hotel)))
-     JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
+     LEFT JOIN habitaciones_hotel h ON ((hot.id_hotel = h.id_hotel)))
   ORDER BY hot.calificacion DESC;
 
 
@@ -11652,12 +11652,12 @@ CREATE OR REPLACE VIEW public.v_info_general_hoteles AS
  SELECT h.nombre AS hotel,
     h.calificacion,
     count(DISTINCT h2.id_habitacion) AS cant_habitaciones,
-    sum(df.precio_total) AS ganancias
+    COALESCE(sum(df.precio_total), 0.00) AS ganancias
    FROM (((public.hotel h
-     JOIN public.habitacion h2 ON ((h.id_hotel = h2.id_hotel)))
-     JOIN public.detalle_factura df ON ((h2.id_habitacion = df.id_habitacion)))
-     JOIN public.factura f ON ((df.id_factura = f.id_factura)))
-  GROUP BY h.id_hotel;
+     LEFT JOIN public.habitacion h2 ON ((h.id_hotel = h2.id_hotel)))
+     LEFT JOIN public.detalle_factura df ON ((h2.id_habitacion = df.id_habitacion)))
+     LEFT JOIN public.factura f ON ((df.id_factura = f.id_factura)))
+  GROUP BY h.id_hotel, h.nombre, h.calificacion;
 
 
 --
