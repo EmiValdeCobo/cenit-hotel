@@ -8,6 +8,7 @@ interface Props {
 }
 
 export default function BillingClient({ initialBills }: Props) {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const [bills] = useState<FacturaSimplificada[]>(initialBills);
   const [search, setSearch] = useState('');
   const [selectedBill, setSelectedBill] = useState<FacturaCompleta | null>(null);
@@ -23,7 +24,7 @@ export default function BillingClient({ initialBills }: Props) {
     setLoadingDetails(true);
     setDetailError('');
     try {
-      const res = await fetch(`http://localhost:8000/api/reportes/factura/${id}?t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`${apiBase}/api/reportes/factura/${id}?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setSelectedBill(data);
@@ -90,6 +91,15 @@ export default function BillingClient({ initialBills }: Props) {
                       >
                         Ver Detalle
                       </button>
+                      <span className="mx-2 text-outline">|</span>
+                      <a
+                        href={`${apiBase}/api/reportes/factura/${b.id_factura}/html`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-secondary font-semibold hover:underline text-sm"
+                      >
+                        Factura Completa
+                      </a>
                     </td>
                   </tr>
                 ))

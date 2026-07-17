@@ -162,11 +162,17 @@ export default function GuestsClient({ initialGuests, reservations, activeStays 
         const errData = await res.json();
         throw new Error(errData.detail || 'Fallo en checkout');
       }
+      const data = await res.json();
+      const idFactura = data.id_factura;
       setCheckoutStay(null);
+      
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      window.open(`${apiBase}/api/reportes/factura/${idFactura}/html`, '_blank');
+      
       setAlertDialog({
         isOpen: true,
         title: 'Check-out Exitoso',
-        message: 'Check-out procesado exitosamente. La factura ha sido generada.',
+        message: 'Check-out procesado exitosamente. La factura completa se ha abierto en una nueva pestaña.',
         type: 'success',
         onClose: () => window.location.reload()
       });
