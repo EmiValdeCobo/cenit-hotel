@@ -26,8 +26,9 @@ export default function SideNavBar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  // Al montar el componente en el cliente, leemos la preferencia guardada en localStorage
+  // Al montar el componente en el cliente, leemos las preferencias guardadas en localStorage
   // y establecemos el ancho inicial de forma segura, evitando errores de hidratación de SSR.
   useEffect(() => {
     const stored = window.localStorage.getItem(SIDENAV_STORAGE_KEY);
@@ -41,6 +42,9 @@ export default function SideNavBar() {
       "--sidenav-width",
       initialCollapsed ? SIDENAV_COLLAPSED_WIDTH : SIDENAV_EXPANDED_WIDTH
     );
+
+    const isDark = document.documentElement.classList.contains('dark');
+    setTheme(isDark ? 'dark' : 'light');
   }, []);
 
   const toggleCollapsed = () => {
@@ -53,6 +57,18 @@ export default function SideNavBar() {
       window.localStorage.setItem(SIDENAV_STORAGE_KEY, String(next));
       return next;
     });
+  };
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      window.localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      window.localStorage.setItem('theme', 'light');
+    }
   };
 
   // Un item se considera activo solo si coincide exactamente con la ruta actual
@@ -142,11 +158,29 @@ export default function SideNavBar() {
 
         {renderNavList()}
 
-        <div className="mt-auto px-4 flex items-center gap-3 opacity-70">
-          <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center overflow-hidden shrink-0">
-            <span className="material-symbols-outlined text-on-surface-variant text-sm">person</span>
+        <div className="mt-auto px-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <span className="font-label-md text-label-md text-primary-fixed-dim select-none">
+              Modo Nocturno
+            </span>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label="Cambiar tema de color"
+              className="w-10 h-10 flex items-center justify-center rounded-lg text-surface-bright hover:bg-primary-container/50 transition-colors duration-200 shrink-0"
+            >
+              <span className="material-symbols-outlined text-xl">
+                {theme === "light" ? "dark_mode" : "light_mode"}
+              </span>
+            </button>
           </div>
-          <span className="font-label-md text-label-md text-primary-fixed-dim">Perfil de administrador</span>
+
+          <div className="flex items-center gap-3 opacity-70">
+            <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center overflow-hidden shrink-0">
+              <span className="material-symbols-outlined text-on-surface-variant text-sm">person</span>
+            </div>
+            <span className="font-label-md text-label-md text-primary-fixed-dim">Perfil de administrador</span>
+          </div>
         </div>
       </nav>
 
@@ -178,15 +212,35 @@ export default function SideNavBar() {
 
         {renderNavList(isCollapsed)}
 
-        <div className={`mt-auto flex items-center gap-3 opacity-70 ${isCollapsed ? "justify-center px-2" : "px-4"}`}>
-          <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center overflow-hidden shrink-0">
-            <span className="material-symbols-outlined text-on-surface-variant text-sm">person</span>
+        <div className={`mt-auto flex flex-col gap-4 ${isCollapsed ? "px-2" : "px-4"}`}>
+          <div className={`flex ${isCollapsed ? "justify-center" : "items-center justify-between"}`}>
+            {!isCollapsed && (
+              <span className="font-label-md text-label-md text-primary-fixed-dim select-none">
+                Modo Nocturno
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label="Cambiar tema de color"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-surface-bright hover:bg-primary-container/50 transition-colors duration-200 shrink-0"
+            >
+              <span className="material-symbols-outlined text-xl">
+                {theme === "light" ? "dark_mode" : "light_mode"}
+              </span>
+            </button>
           </div>
-          {!isCollapsed && (
-            <span className="font-label-md text-label-md text-primary-fixed-dim whitespace-nowrap overflow-hidden">
-              Perfil de administrador
-            </span>
-          )}
+
+          <div className={`flex items-center gap-3 opacity-70 ${isCollapsed ? "justify-center" : ""}`}>
+            <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center overflow-hidden shrink-0">
+              <span className="material-symbols-outlined text-on-surface-variant text-sm">person</span>
+            </div>
+            {!isCollapsed && (
+              <span className="font-label-md text-label-md text-primary-fixed-dim whitespace-nowrap overflow-hidden">
+                Perfil de administrador
+              </span>
+            )}
+          </div>
         </div>
       </nav>
     </>
