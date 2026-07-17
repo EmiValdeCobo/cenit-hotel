@@ -85,8 +85,8 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+    <div className="space-y-6 flex-1 flex flex-col">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full">
         <div className="flex flex-1 gap-4 w-full">
           <input
             type="text"
@@ -115,7 +115,7 @@ export default function ReservationsClient({ initialReservations, rooms, guests 
         </button>
       </div>
 
-      <div className="glass-card rounded-2xl overflow-hidden p-6">
+      <div className="glass-card rounded-2xl overflow-hidden p-6 flex-1">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

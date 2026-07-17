@@ -36,7 +36,7 @@ export default function HotelsClient() {
 
   const fetchHotels = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/hoteles/datos-generales?t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`http://localhost:8000/api/hoteles/datos-generales`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setHotels(data);

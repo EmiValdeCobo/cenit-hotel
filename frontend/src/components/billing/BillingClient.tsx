@@ -39,12 +39,12 @@ export default function BillingClient({ initialBills }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex">
+    <div className="space-y-6 flex-1 flex flex-col">
+      <div className="flex w-full">
         <input
           type="text"
           placeholder="Buscar por ID factura o huésped..."
-          className="w-full sm:max-w-md px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-secondary transition-all"
+          className="w-full sm:w-96 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-secondary transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -56,7 +56,7 @@ export default function BillingClient({ initialBills }: Props) {
         </div>
       )}
 
-      <div className="glass-card rounded-2xl overflow-hidden">
+      <div className="glass-card rounded-2xl overflow-hidden flex-1">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

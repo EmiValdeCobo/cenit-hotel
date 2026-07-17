@@ -32,7 +32,7 @@ export default async function Dashboard() {
   const averageIncome = hotels.reduce((sum, h) => sum + h.ganancia_promedio_mensual, 0);
 
   return (
-    <main className="flex-1 overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
+    <main className="flex-1 flex flex-col overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
       <div className="mb-[40px]">
         <h2 className="font-headline-md text-headline-md text-on-background">Dashboard Overview</h2>
         <p className="font-body-sm text-body-sm text-on-surface-variant">Instantánea del estado del hotel en tiempo real</p>
@@ -108,7 +108,7 @@ export default async function Dashboard() {
             <h3 className="font-headline-md text-headline-md text-on-background text-2xl">Próximas Reservas</h3>
             <span className="material-symbols-outlined text-outline">calendar_today</span>
           </div>
-          <ul className="flex-1 overflow-y-auto max-h-[400px]">
+          <ul className="flex-1 flex flex-col overflow-y-auto max-h-[400px]">
             {reservations.length === 0 ? (
               <p className="p-6 text-center text-outline text-sm">No hay próximas reservas registradas.</p>
             ) : (

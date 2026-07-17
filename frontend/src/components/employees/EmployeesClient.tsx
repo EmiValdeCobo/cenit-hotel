@@ -66,12 +66,12 @@ export default function EmployeesClient({ initialEmployees }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+    <div className="space-y-6 flex-1 flex flex-col">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full">
         <input
           type="text"
           placeholder="Buscar por nombre o rol..."
-          className="w-full sm:max-w-md px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-secondary transition-all"
+          className="w-full sm:w-96 px-4 py-2 rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-secondary transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -84,7 +84,7 @@ export default function EmployeesClient({ initialEmployees }: Props) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
         {filteredEmployees.map((e, index) => (
           <div key={index} className="glass-card rounded-2xl p-6 space-y-4 hover:shadow-ambient-hover hover:-translate-y-1 transition-all duration-300 animate-fade-in">
             <div className="flex justify-between items-start">

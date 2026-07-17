@@ -30,7 +30,7 @@ export default async function ReservationsPage() {
   const { reservations, rooms, guests } = await getData();
 
   return (
-    <main className="flex-1 overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
+    <main className="flex-1 flex flex-col overflow-y-auto p-[16px] md:p-[32px] overflow-x-hidden">
       <div className="mb-[40px]">
         <h2 className="font-headline-md text-headline-md text-on-background">Reservaciones</h2>
         <p className="font-body-sm text-body-sm text-on-surface-variant">Gestión de estadías y habitaciones del hotel Cénit</p>
