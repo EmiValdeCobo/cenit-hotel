@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useId } from "react";
 
 interface Option {
   value: string | number;
@@ -31,25 +31,41 @@ export default function SearchableCombobox({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  const listboxId = useId();
 
-  // Debounce logic for the search filter
+  // OPTIMIZACIÓN (Performance):
+  // Filtrado memoizado con useMemo para evitar cómputos y parpadeos en cada renderizado.
+  const filteredOptions = useMemo(() => {
+    const query = searchTerm.toLowerCase().trim();
+    if (!query) return options;
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(query) ||
+        (opt.sublabel && opt.sublabel.toLowerCase().includes(query))
+    );
+  }, [options, searchTerm]);
+
+  // Opción actualmente seleccionada
+  const selectedOption = useMemo(
+    () => options.find((opt) => String(opt.value) === String(value)),
+    [options, value]
+  );
+
+  // Al abrir el dropdown, enfocar automáticamente el input de búsqueda y resetear índice
   useEffect(() => {
-    setIsSearching(true);
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setIsSearching(false);
-    }, 200); // 200ms delay
+    if (isOpen) {
+      setHighlightedIndex(0);
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
 
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
-
-  // Sync selected option text
-  const selectedOption = options.find((opt) => String(opt.value) === String(value));
-
-  // Click outside to close dropdown
+  // BUG FIX (a11y & UX): Cierre al hacer clic fuera del componente
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -60,23 +76,61 @@ export default function SearchableCombobox({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter options based on debounced search query
-  const filteredOptions = options.filter((opt) => {
-    const query = debouncedSearch.toLowerCase().trim();
-    if (!query) return true;
-    return (
-      opt.label.toLowerCase().includes(query) ||
-      (opt.sublabel && opt.sublabel.toLowerCase().includes(query))
-    );
-  });
+  // BUG FIX (a11y): Soporte completo para navegación por teclado (ArrowUp, ArrowDown, Enter, Escape)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+
+    if (!isOpen) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev < filteredOptions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredOptions.length - 1
+        );
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (filteredOptions[highlightedIndex]) {
+          onChange(filteredOptions[highlightedIndex].value);
+          setIsOpen(false);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        setIsOpen(false);
+        break;
+      case "Tab":
+        setIsOpen(false);
+        break;
+    }
+  };
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
-      {/* Combobox Trigger Button */}
+      {/* Botón Trigger del Combobox con Atributos ARIA */}
       <button
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-controls={listboxId}
+        role="combobox"
+        aria-autocomplete="list"
         className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-surface-container border transition-all text-left outline-none ${
           isOpen
             ? "border-secondary ring-2 ring-secondary/20 bg-surface-bright"
@@ -99,87 +153,88 @@ export default function SearchableCombobox({
             <span className="text-sm text-outline truncate">{placeholder}</span>
           )}
         </div>
-        <span className="material-symbols-outlined text-outline shrink-0 ml-2 select-none">
-          unfold_more
+
+        <span
+          className={`material-symbols-outlined text-outline transition-transform duration-200 shrink-0 ml-2 ${
+            isOpen ? "rotate-180 text-secondary" : ""
+          }`}
+        >
+          keyboard_arrow_down
         </span>
       </button>
 
-      {/* Hidden input to support native form validation (required) */}
-      <input
-        type="text"
-        required={required}
-        value={value || ""}
-        onChange={() => {}}
-        tabIndex={-1}
-        className="opacity-0 absolute inset-x-0 bottom-0 h-0 w-full pointer-events-none"
-      />
-
-      {/* Dropdown Menu */}
+      {/* Desplegable de Opciones */}
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 z-50 rounded-2xl bg-surface-bright border border-surface-variant shadow-2xl p-2 animate-fade-in max-h-[300px] flex flex-col">
-          {/* Search Box */}
-          <div className="relative flex items-center mb-2">
-            <span className="material-symbols-outlined text-outline absolute left-3 text-lg select-none">
-              search
-            </span>
-            <input
-              type="text"
-              autoFocus
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar..."
-              className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-surface-container border border-outline-variant focus:outline-none focus:border-secondary"
-            />
-            {isSearching && (
-              <div className="absolute right-3 flex items-center justify-center">
-                <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin"></div>
-              </div>
-            )}
+        <div 
+          id={listboxId}
+          role="listbox"
+          className="absolute z-50 mt-1.5 w-full bg-surface-bright border border-surface-variant rounded-2xl shadow-2xl overflow-hidden max-h-60 flex flex-col animate-fade-in"
+        >
+          {/* Input de Búsqueda Interno */}
+          <div className="p-2 border-b border-surface-variant/60 sticky top-0 bg-surface-bright z-10">
+            <div className="relative flex items-center">
+              <span className="material-symbols-outlined absolute left-2.5 text-outline text-lg pointer-events-none">
+                search
+              </span>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Buscar..."
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg bg-surface-container border border-outline-variant/60 focus:border-secondary focus:outline-none text-on-surface"
+              />
+            </div>
           </div>
 
-          {/* Options List */}
-          <ul className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+          {/* Lista de Resultados Opciones */}
+          <div className="overflow-y-auto flex-1 p-1">
             {filteredOptions.length === 0 ? (
-              <li className="text-xs text-outline text-center py-6 px-4">
+              <div className="p-3 text-xs text-center text-outline">
                 {noResultsText}
-              </li>
+              </div>
             ) : (
-              filteredOptions.map((opt) => {
+              filteredOptions.map((opt, index) => {
                 const isSelected = String(opt.value) === String(value);
+                const isHighlighted = index === highlightedIndex;
+
                 return (
-                  <li key={opt.value}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onChange(opt.value);
-                        setIsOpen(false);
-                        setSearchTerm("");
-                      }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg transition-colors text-sm ${
-                        isSelected
-                          ? "bg-secondary-container text-on-secondary-container font-semibold"
-                          : "text-on-surface hover:bg-surface-container-high"
-                      }`}
-                    >
-                      <div className="flex flex-col min-w-0 pr-2">
-                        <span className="truncate">{opt.label}</span>
-                        {opt.sublabel && (
-                          <span className={`text-xs truncate mt-0.5 ${isSelected ? "text-on-secondary-container/80" : "text-outline"}`}>
-                            {opt.sublabel}
-                          </span>
-                        )}
-                      </div>
-                      {isSelected && (
-                        <span className="material-symbols-outlined text-lg shrink-0 ml-2 select-none">
-                          check
+                  <div
+                    key={opt.value}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={`px-3 py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                      isSelected
+                        ? "bg-secondary/15 text-secondary font-bold"
+                        : isHighlighted
+                        ? "bg-surface-variant/40 text-on-surface"
+                        : "text-on-surface hover:bg-surface-variant/20"
+                    }`}
+                  >
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="truncate">{opt.label}</span>
+                      {opt.sublabel && (
+                        <span className="text-[10px] text-outline truncate">
+                          {opt.sublabel}
                         </span>
                       )}
-                    </button>
-                  </li>
+                    </div>
+                    {isSelected && (
+                      <span className="material-symbols-outlined text-secondary text-base shrink-0 ml-2">
+                        check
+                      </span>
+                    )}
+                  </div>
                 );
               })
             )}
-          </ul>
+          </div>
         </div>
       )}
     </div>
