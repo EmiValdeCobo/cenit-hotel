@@ -1,4 +1,8 @@
 # backend/services/estadia_service.py
+"""
+Servicio de Gestión de Estadías (Capa de Aplicación).
+Coordina los procesos de check-in, check-out, consumos y emisión de eventos de dominio (Observer Pattern).
+"""
 from sqlalchemy.orm import Session
 from db.repositories.estadia_repository import EstadiaRepository
 from db.repositories.reservacion_repository import ReservacionRepository
@@ -7,6 +11,9 @@ from db.models import Estadia, ConsumoServicio
 from errors.exceptions import EntityNotFoundException, BusinessException
 from schemas.schemas import EstadiaCreate, EstadiaCheckout, ConsumoServicioCreate
 from sqlalchemy.exc import DBAPIError
+
+from core.events.dispatcher import event_dispatcher
+from core.events.events import CheckInCompletedEvent, CheckOutCompletedEvent, ConsumoRegistradoEvent
 
 class EstadiaService:
     def __init__(self, db: Session):
@@ -24,7 +31,15 @@ class EstadiaService:
         estadia = Estadia(id_reservacion=estadia_in.id_reservacion)
         res.estado = "CONFIRMADA"
         self.reservacion_repo.update(res)
-        return self.repo.create(estadia)
+        nueva_estadia = self.repo.create(estadia)
+
+        # Publicar evento de dominio (Patrón Observer)
+        event_dispatcher.publish(CheckInCompletedEvent(
+            id_estadia=nueva_estadia.id_estadia,
+            id_reservacion=nueva_estadia.id_reservacion
+        ))
+
+        return nueva_estadia
 
     def registrar_checkout(self, id_estadia: int, checkout_in: EstadiaCheckout):
         estadia = self.repo.get(id_estadia)
@@ -45,7 +60,17 @@ class EstadiaService:
             if not factura:
                 raise BusinessException("No se pudo obtener la factura del checkout.")
                 
-            return self.factura_repo.get_factura_completa(factura.id_factura)
+            factura_completa = self.factura_repo.get_factura_completa(factura.id_factura)
+
+            # Publicar evento de dominio (Patrón Observer)
+            event_dispatcher.publish(CheckOutCompletedEvent(
+                id_estadia=id_estadia,
+                id_factura=factura.id_factura,
+                total_pagado=float(factura.total_a_pagar or 0.0),
+                metodo_pago=checkout_in.metodo_pago
+            ))
+
+            return factura_completa
         except DBAPIError as e:
             raise BusinessException(str(e.orig))
 
@@ -62,7 +87,16 @@ class EstadiaService:
             id_habitacion=consumo_in.id_habitacion
         )
         try:
-            return self.repo.registrar_consumo(consumo)
+            resultado = self.repo.registrar_consumo(consumo)
+
+            # Publicar evento de dominio (Patrón Observer)
+            event_dispatcher.publish(ConsumoRegistradoEvent(
+                id_estadia=id_estadia,
+                id_servicio=consumo_in.id_servicio,
+                id_habitacion=consumo_in.id_habitacion
+            ))
+
+            return resultado
         except DBAPIError as e:
             raise BusinessException(str(e.orig))
 
