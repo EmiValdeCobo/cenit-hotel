@@ -1,4 +1,8 @@
 # backend/errors/exceptions.py
+"""
+Manejo Centralizado de Excepciones y Hardening contra Fugas de Información (Information Leakage).
+Garantiza que ningún error interno exponga trazas del sistema, sentencias SQL ni rutas de archivos.
+"""
 from fastapi import Request, FastAPI
 from fastapi.responses import JSONResponse
 import logging
@@ -21,7 +25,8 @@ class BusinessException(AppException):
 
 class DatabaseException(AppException):
     def __init__(self, message: str):
-        super().__init__(f"Error de base de datos: {message}", 500)
+        # HARDENING: Ocultar detalles de la base de datos en mensajes públicos
+        super().__init__("Error de procesamiento en la base de datos.", 500)
 
 def register_exception_handlers(app: FastAPI):
     @app.exception_handler(AppException)
@@ -34,8 +39,9 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        logger.error(f"Unhandled Exception: {str(exc)}", exc_info=True)
+        # HARDENING: Registrar la traza completa de forma interna en logs pero responder de forma genérica
+        logger.error(f"[SECURITY UNHANDLED ERROR] {str(exc)}", exc_info=True)
         return JSONResponse(
             status_code=500,
-            content={"success": False, "detail": "Error interno del servidor."}
+            content={"success": False, "detail": "Error interno del servidor. La solicitud ha sido registrada."}
         )
